@@ -30,6 +30,9 @@
 
 #include <dsp.h>
 
+#include <nuttx/irq.h>
+#include <arch/armv7-m/irq.h>
+
 #include "foc_cfg.h"
 #include "foc_debug.h"
 #include "foc_motor_f32.h"
@@ -181,6 +184,8 @@ static int foc_state_print(FAR struct foc_motor_f32_s *motor)
  * Name: foc_float_thr
  ****************************************************************************/
 
+volatile bool g_in_pthread = false;
+
 int foc_float_thr(FAR struct foc_ctrl_env_s *envp)
 {
   struct foc_mq_s         handle;
@@ -272,6 +277,7 @@ int foc_float_thr(FAR struct foc_ctrl_env_s *envp)
 
       if (motor.mq.start == true)
         {
+
           /* Get FOC device state */
 
           ret = foc_dev_state_get(&dev);
@@ -280,6 +286,8 @@ int foc_float_thr(FAR struct foc_ctrl_env_s *envp)
               PRINTF("ERROR: foc_dev_state_get failed %d!\n", ret);
               goto errout;
             }
+
+          g_in_pthread = true;
 
 #ifdef CONFIG_EXAMPLES_FOC_STATE_USE_MODEL_PMSM
           /* Get model state */
@@ -319,6 +327,13 @@ int foc_float_thr(FAR struct foc_ctrl_env_s *envp)
               goto errout;
             }
 
+          /* Dumy load */
+
+          for (int j = 0; j < 500; j += 1)
+            {
+              asm("nop");
+            }
+
           /* Run FOC */
 
           ret = foc_handler_run(&motor, &dev);
@@ -353,6 +368,8 @@ int foc_float_thr(FAR struct foc_ctrl_env_s *envp)
               PRINTF("ERROR: foc_dev_prams_set failed %d!\n", ret);
               goto errout;
             }
+
+          g_in_pthread = false;
         }
       else
         {

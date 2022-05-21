@@ -37,7 +37,13 @@
 
 struct foc_device_s
 {
-  int                 fd;      /* FOC device */
+#if defined(CONFIG_EXAMPLES_FOC_DEVICE_FOC)
+  int                     fd;   /* FOC device */
+#elif defined(CONFIG_EXAMPLES_FOC_SERIAL_FOC)
+  struct focserial_dev_s   s;   /* FOC serial device */
+#else
+#  error Not supported FOC device
+#endif
   struct foc_info_s   info;    /* FOC dev info */
   struct foc_state_s  state;   /* FOC dev state */
   struct foc_params_s params;  /* FOC dev params */

@@ -32,10 +32,17 @@ MODULE    = $(CONFIG_EXAMPLES_FOC)
 MAINSRC = foc_main.c
 
 ASRCS =
-CSRCS = foc_device.c foc_mq.c foc_thr.c foc_intf.c
+CSRCS = foc_mq.c foc_thr.c foc_intf.c
+
+ifeq ($(CONFIG_EXAMPLES_FOC_DEVICE_FOC),y)
+  CSRCS += foc_device.c
+endif
+ifeq ($(CONFIG_EXAMPLES_FOC_DEVICE_SERIAL),y)
+  CSRCS += foc_device_serial.c
+endif
 
 ifeq ($(CONFIG_BUILTIN),y)
-CSRCS += foc_parseargs.c
+  CSRCS += foc_parseargs.c
 endif
 
 # fixed16 support
