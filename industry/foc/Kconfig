@@ -161,4 +161,26 @@ config INDUSTRY_FOC_VELOCITY_OPLL
 	---help---
 		Enable support for the velocity PLL observer
 
+config INDUSTRY_FOC_SERIAL
+	bool "FOC serial master device"
+	default n
+	---help---
+		Enable support for the FOC serial device
+
+if INDUSTRY_FOC_SERIAL
+
+config INDUSTRY_FOC_SERIAL_MASTER
+	bool "FOC serial master device"
+	default n
+	---help---
+		Enable support for the FOC serial master device
+
+config INDUSTRY_FOC_SERIAL_SLAVE
+	bool "FOC serial slave device"
+	default n
+	---help---
+		Enable support for the FOC serial slave device
+
+endif # INDUSTRY_FOC_SERIAL
+
 endif

@@ -132,4 +132,20 @@ endif
 
 endif
 
+# serial device
+
+ifeq ($(CONFIG_INDUSTRY_FOC_SERIAL),y)
+
+CSRCS += serial/foc_serial.c
+
+ifeq ($(CONFIG_INDUSTRY_FOC_SERIAL_MASTER),y)
+CSRCS += serial/foc_serial_master.c
+endif
+
+ifeq ($(CONFIG_INDUSTRY_FOC_SERIAL_SLAVE),y)
+CSRCS += serial/foc_serial_slave.c
+endif
+
+endif
+
 include $(APPDIR)/Application.mk
