@@ -1,0 +1,49 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config EXAMPLES_FOCSERIAL
+	tristate "FOC slave example"
+	default n
+	---help---
+		Enable the FOC slave example
+
+if EXAMPLES_FOCSERIAL
+
+config EXAMPLES_FOCSERIAL_PROGNAME
+	string "Program name"
+	default "focserial"
+	---help---
+		This is the name of the program that will be used when the NSH ELF
+		program is installed.
+
+config EXAMPLES_FOCSERIAL_PRIORITY
+	int "FOC slave task priority"
+	default 100
+
+config EXAMPLES_FOCSERIAL_STACKSIZE
+	int "FOC slave stack size"
+	default DEFAULT_TASK_STACKSIZE
+
+config EXAMPLES_FOCSERIAL_SERIAL_DEVPATH
+	string "FOC slave serial devpath"
+	default "/dev/ttyS1"
+
+config EXAMPLES_FOCSERIAL_FOC_DEVPATH
+	string "FOC slave FOC devpath"
+	default "/dev/foc"
+
+config EXAMPLES_FOCSERIAL_PWM_FREQ
+	int "FOC slave PWM frequency"
+	default 10000
+	---help---
+		Select the FOC PWM switching frequency
+
+config EXAMPLES_FOCSERIAL_NOTIFIER_FREQ
+	int "FOC slave notifier frequency"
+	default EXAMPLES_FOCSERIAL_PWM_FREQ
+	---help---
+		Select the FOC notifier frequency
+
+endif
