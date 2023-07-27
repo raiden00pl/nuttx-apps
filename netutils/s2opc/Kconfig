@@ -1,0 +1,13 @@
+menuconfig NETUTILS_S2OPC
+	bool "S2OPC support"
+	default n
+	---help---
+		Enable the S2OPC build
+
+if NETUTILS_S2OPC
+
+config S2OPC_VERSION
+	string "Version number"
+	default "05c45399f3f63e8f46c913f0099003b589ab7288"
+
+endif # NETUTILS_S2OPC
