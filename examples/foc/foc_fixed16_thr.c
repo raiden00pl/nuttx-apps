@@ -295,6 +295,7 @@ int foc_fixed16_thr(FAR struct foc_ctrl_env_s *envp)
   struct foc_mq_s         handle;
   struct foc_motor_b16_s  motor;
   struct foc_device_s     dev;
+  irqstate_t              intflags;
   int                     ret  = OK;
 
   DEBUGASSERT(envp);
@@ -340,6 +341,8 @@ int foc_fixed16_thr(FAR struct foc_ctrl_env_s *envp)
 
   while (motor.mq.quit == false)
     {
+      intflags = enter_critical_section();
+
       if (motor.mq.start == true)
         {
           /* Get FOC device state */
@@ -390,6 +393,7 @@ int foc_fixed16_thr(FAR struct foc_ctrl_env_s *envp)
 
           /* Start from the beginning of the control loop */
 
+          leave_critical_section(intflags);
           continue;
         }
 
@@ -397,6 +401,7 @@ int foc_fixed16_thr(FAR struct foc_ctrl_env_s *envp)
 
       if (motor.mq.start == false)
         {
+          leave_critical_section(intflags);
           usleep(1000);
           continue;
         }
@@ -510,6 +515,8 @@ int foc_fixed16_thr(FAR struct foc_ctrl_env_s *envp)
           PRINTF_PERF("max=%" PRId32 "\n", dev.perf.max);
         }
 #endif
+
+      leave_critical_section(intflags);
     }
 
 errout:
