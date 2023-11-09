@@ -108,6 +108,12 @@ struct foc_motor_b16_s
   pid_controller_b16_t          vel_pi;       /* Velocity controller */
 #endif
 
+  /* Position controller data ***********************************************/
+
+#ifdef CONFIG_EXAMPLES_FOC_POSCTRL_PID
+  pid_controller_b16_t          pos_pid;      /* Position controller */
+#endif
+
   /* Angle state ************************************************************/
 
   b16_t                         angle_now;    /* Phase angle now */

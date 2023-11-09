@@ -616,6 +616,10 @@ static int foc_motor_state(FAR struct foc_motor_f32_s *motor, int state)
           motor->dq_ref.q = 0.0f;
           motor->dq_ref.d = 0.0f;
 
+#ifdef CONFIG_EXAMPLES_FOC_HAVE_VEL
+          motor->vel.des = 0.0f;
+#endif
+
           break;
         }
 
@@ -859,6 +863,9 @@ static int foc_motor_run(FAR struct foc_motor_f32_s *motor)
 #ifdef CONFIG_EXAMPLES_FOC_HAVE_VEL
   float vel_err = 0.0f;
 #endif
+#ifdef CONFIG_EXAMPLES_FOC_HAVE_POS
+  float pos_err = 0.0f;
+#endif
   float q_ref = 0.0f;
   float d_ref = 0.0f;
   int   ret   = OK;
@@ -922,6 +929,45 @@ static int foc_motor_run(FAR struct foc_motor_f32_s *motor)
 
   switch (motor->envp->cfg->mmode)
     {
+#ifdef CONFIG_EXAMPLES_FOC_HAVE_POS
+      case FOC_MMODE_POS:
+        {
+          /* Saturate position */
+
+          f_saturate(&motor->pos.des, -motor->pos_sat, motor->pos_sat);
+
+          /* Position controller */
+
+          if (motor->time % POS_CONTROL_PRESCALER == 0)
+            {
+              /* Update position setting */
+
+              motor->pos.set = motor->pos.des;
+
+              /* Get position error */
+
+              pos_err = motor->pos.set - motor->pos.now;
+
+#ifdef CONFIG_EXAMPLES_FOC_POS_CIRCULAR
+              /* Normalize position error to <-PI, PI> in circular mode */
+
+              angle_norm_2pi(&pos_err, -M_PI_F, M_PI_F);
+#endif
+
+#ifdef CONFIG_EXAMPLES_FOC_POSCTRL_PID
+
+              /* PID position controller */
+
+              motor->vel.des = pid_controller(&motor->pos_pid, pos_err);
+#else
+#  error Missing position controller
+#endif
+            }
+
+          /* Don't break here! pass to velocity controller */
+        }
+#endif
+
 #ifdef CONFIG_EXAMPLES_FOC_HAVE_VEL
       case FOC_MMODE_VEL:
         {
@@ -982,6 +1028,7 @@ static int foc_motor_run(FAR struct foc_motor_f32_s *motor)
           /* Torque setpoint */
 
           motor->torq.set = motor->torq.des;
+          motor->torq.now = motor->foc_state.idq.q;
 
           break;
         }
@@ -1044,6 +1091,7 @@ static int foc_motor_ang_get(FAR struct foc_motor_f32_s *motor)
 {
   struct foc_angle_in_f32_s     ain;
   struct foc_angle_out_f32_s    aout;
+  float                         angle_diff;
   int                           ret = OK;
 
   DEBUGASSERT(motor);
@@ -1119,6 +1167,10 @@ static int foc_motor_ang_get(FAR struct foc_motor_f32_s *motor)
 
   else if (aout.type == FOC_ANGLE_TYPE_MECH)
     {
+      /* Get angle diff */
+
+      angle_diff = aout.angle - motor->angle_m;
+
       /* Store as mechanical angle */
 
       motor->angle_m = aout.angle;
@@ -1178,6 +1230,24 @@ static int foc_motor_ang_get(FAR struct foc_motor_f32_s *motor)
   /* Get phase angle from sensor */
 
   motor->angle_now = motor->angle_el;
+#endif
+
+#ifdef CONFIG_EXAMPLES_FOC_HAVE_POS
+  /* Normalize position diff to <-PI, PI> */
+
+  angle_norm_2pi(&angle_diff, -M_PI_F, M_PI_F);
+  motor->angle_mlin += angle_diff;
+
+#ifdef CONFIG_EXAMPLES_FOC_POS_LINEAR
+  /* In linear positon mode we store linear position */
+
+  motor->pos.now = motor->angle_mlin;
+#else
+  /* In circular positon mode we store mechanical angle */
+
+  motor->pos.now = motor->angle_m;
+#endif
+
 #endif
 
 #if defined(CONFIG_EXAMPLES_FOC_SENSORED) || defined(CONFIG_EXAMPLES_FOC_ANGOBS)
@@ -1339,10 +1409,17 @@ int foc_motor_init(FAR struct foc_motor_f32_s *motor,
   motor->ol_hys     = (motor->envp->cfg->ol_hys / 1.0f);
 #endif
 #ifdef CONFIG_EXAMPLES_FOC_HAVE_TORQ
-  motor->torq_sat   = (CONFIG_EXAMPLES_FOC_TORQ_MAX / 1000.0f);
+  motor->torq_sat   = CONFIG_EXAMPLES_FOC_TORQ_MAX / 1000.0f;
 #endif
 #ifdef CONFIG_EXAMPLES_FOC_HAVE_VEL
-  motor->vel_sat    = (CONFIG_EXAMPLES_FOC_VEL_MAX / 1.0f);
+  motor->vel_sat    = CONFIG_EXAMPLES_FOC_VEL_MAX / 1.0f;
+#endif
+#ifdef CONFIG_EXAMPLES_FOC_HAVE_POS
+#  ifdef CONFIG_EXAMPLES_FOC_POS_CIRCULAR
+  motor->pos_sat = 2.0f*M_PI_F;
+#  else
+  motor->pos_sat = (CONFIG_EXAMPLES_FOC_POS_MAX / 1.0f);
+#  endif
 #endif
 
 #ifdef CONFIG_EXAMPLES_FOC_HAVE_RUN
@@ -1550,6 +1627,18 @@ int foc_motor_init(FAR struct foc_motor_f32_s *motor,
   pi_saturation_set(&motor->vel_pi, -motor->torq_sat, motor->torq_sat);
 
   pi_antiwindup_enable(&motor->vel_pi, 0.99f, true);
+#endif
+
+#ifdef CONFIG_EXAMPLES_FOC_POSCTRL_PID
+  /* Initialize postion controller */
+
+  pid_controller_init(&motor->pos_pid,
+                      CONFIG_EXAMPLES_FOC_POSCTRL_PID_KP / 1000000.0f,
+                      CONFIG_EXAMPLES_FOC_POSCTRL_PID_KI / 1000000.0f,
+                      CONFIG_EXAMPLES_FOC_POSCTRL_PID_KD / 1000000.0f);
+
+  pid_saturation_set(&motor->pos_pid, -motor->vel_sat, motor->vel_sat);
+  pi_antiwindup_enable(&motor->pos_pid, 0.99f, true);
 #endif
 
 #ifdef CONFIG_EXAMPLES_FOC_HAVE_ALIGN

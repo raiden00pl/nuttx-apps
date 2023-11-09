@@ -107,10 +107,17 @@ struct foc_motor_f32_s
   pid_controller_f32_t          vel_pi;       /* Velocity controller */
 #endif
 
+  /* Position controller data ***********************************************/
+
+#ifdef CONFIG_EXAMPLES_FOC_POSCTRL_PID
+  pid_controller_f32_t          pos_pid;      /* Position controller */
+#endif
+
   /* Angle state ************************************************************/
 
   float                         angle_now;    /* Phase angle now */
   float                         angle_m;      /* Motor mechanical angle */
+  float                         angle_mlin;   /* Motor mechanical angle (linear) */
   float                         angle_el;     /* Motor electrical angle */
 #ifdef CONFIG_EXAMPLES_FOC_HAVE_OPENLOOP
   float                         angle_ol;     /* Phase angle open-loop */
@@ -144,6 +151,7 @@ struct foc_motor_f32_s
 #endif
 #ifdef CONFIG_EXAMPLES_FOC_HAVE_POS
   struct foc_setpoint_f32_s     pos;          /* Position setpoint */
+  float                         pos_sat;      /* Position saturation */
 #endif
   float                         dir;          /* Motor's direction */
 

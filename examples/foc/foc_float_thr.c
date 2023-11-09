@@ -189,10 +189,10 @@ static void foc_float_nxscope(FAR struct foc_nxscope_s *nxs,
                               FAR struct foc_motor_f32_s *motor,
                               FAR struct foc_device_s *dev)
 {
-#if (CONFIG_EXAMPLES_FOC_NXSCOPE_CFG != 0)
+/* #if (CONFIG_EXAMPLES_FOC_NXSCOPE_CFG != 0) */
   FAR float *ptr = NULL;
   int        i = nxs->ch_per_inst * motor->envp->id;
-#endif
+/* #endif */
 
 #ifndef CONFIG_EXAMPLES_FOC_NXSCOPE_CONTROL
   nxscope_lock(&nxs->nxs);
@@ -288,6 +288,17 @@ static void foc_float_nxscope(FAR struct foc_nxscope_s *nxs,
   ptr = (FAR float *)&motor->angle_obs;
   nxscope_put_vfloat(&nxs->nxs, i++, ptr, 1);
 #endif
+
+
+  ptr = (FAR float *)&motor->torq;
+  nxscope_put_vfloat(&nxs->nxs, i++, ptr, 3);
+
+  ptr = (FAR float *)&motor->vel;
+  nxscope_put_vfloat(&nxs->nxs, i++, ptr, 3);
+
+  ptr = (FAR float *)&motor->pos;
+  nxscope_put_vfloat(&nxs->nxs, i++, ptr, 3);
+
 
 #ifndef CONFIG_EXAMPLES_FOC_NXSCOPE_CONTROL
   nxscope_unlock(&nxs->nxs);

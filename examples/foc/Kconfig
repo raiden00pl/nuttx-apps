@@ -251,6 +251,67 @@ endif # EXAMPLES_FOC_VELCTRL_PI
 
 endif # EXAMPLES_FOC_HAVE_VEL
 
+if EXAMPLES_FOC_HAVE_POS
+
+config EXAMPLES_FOC_POSCTRL_FREQ
+	int "FOC example position controller frequency"
+	default 500
+
+choice
+	prompt "FOC position controller mode"
+	default EXAMPLES_FOC_POS_CIRCULAR
+
+config EXAMPLES_FOC_POS_CIRCULAR
+	bool "FOC example position controller circular mode"
+
+config EXAMPLES_FOC_POS_LINEAR
+	bool "FOC example position controller linear mode"
+
+endchoice # FOC position controller mode
+
+config EXAMPLES_FOC_POS_MAX
+	int "FOC example linear position maximum (x1)"
+	default 1000
+	depends on EXAMPLES_FOC_POS_LINEAR
+	---help---
+		The unit is rad
+
+choice
+	prompt "FOC position controller selection"
+	default EXAMPLES_FOC_POSCTRL_PID
+
+config EXAMPLES_FOC_POSCTRL_PID
+	bool "FOC position PID controller"
+
+endchoice # FOC position controller
+
+if EXAMPLES_FOC_POSCTRL_PID
+
+config EXAMPLES_FOC_POSCTRL_PID_KP
+	int "FOC position PI Kp (1000000x)"
+	default 0
+	---help---
+		The Kp coefficient used in controller is:
+		Kp = EXAMPLES_FOC_POSCTRL_PID_KP/1000000
+
+config EXAMPLES_FOC_POSCTRL_PID_KI
+	int "FOC position PI Ki (1000000x)"
+	default 0
+	---help---
+		The Ki coefficient used in controller is:
+		Ki = EXAMPLES_FOC_POSCTRL_PID_KI/1000000
+
+config EXAMPLES_FOC_POSCTRL_PID_KD
+	int "FOC position PI Kd (1000000x)"
+	default 0
+	---help---
+		The Kd coefficient used in controller is:
+		Kd = EXAMPLES_FOC_POSCTRL_PID_KD/1000000
+
+endif # EXAMPLES_FOC_POSCTRL_PID
+
+endif # EXAMPLES_FOC_HAVE_POS
+
 config EXAMPLES_FOC_ANGOBS
 	bool "FOC example phase angle observer support"
 	default n

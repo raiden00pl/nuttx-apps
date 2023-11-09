@@ -246,6 +246,10 @@ int foc_nxscope_init(FAR struct foc_nxscope_s *nxs)
       nxscope_chan_init(&nxs->nxs, i++, "aobs", u.u8, 1, 0);
 #endif
 
+      nxscope_chan_init(&nxs->nxs, i++, "sp_torq", u.u8, 3, 0);
+      nxscope_chan_init(&nxs->nxs, i++, "sp_vel", u.u8, 3, 0);
+      nxscope_chan_init(&nxs->nxs, i++, "sp_pos", u.u8, 3, 0);
+
       if (i > CONFIG_EXAMPLES_FOC_NXSCOPE_CHANNELS)
         {
           PRINTF("ERROR: invalid nxscope channels value %d\n", i);

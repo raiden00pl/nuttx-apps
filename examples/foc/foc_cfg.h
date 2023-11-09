@@ -209,6 +209,11 @@
 #define VEL_CONTROL_PRESCALER (CONFIG_EXAMPLES_FOC_NOTIFIER_FREQ /  \
                                CONFIG_EXAMPLES_FOC_VELCTRL_FREQ)
 
+/* Position controller prescaler */
+
+#define POS_CONTROL_PRESCALER (CONFIG_EXAMPLES_FOC_NOTIFIER_FREQ /  \
+                               CONFIG_EXAMPLES_FOC_POSCTRL_FREQ)
+
 /* Open-loop to observer angle merge factor */
 
 #ifdef CONFIG_EXAMPLES_FOC_SENSORLESS
