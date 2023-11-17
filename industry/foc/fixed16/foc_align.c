@@ -402,6 +402,8 @@ static void foc_align_dir_move_b16(FAR struct foc_align_b16_s *align,
 static void foc_align_dir_hold_b16(FAR struct foc_align_b16_s *align,
                                    b16_t dir, bool last, bool diff)
 {
+  b16_t tmp = 0;
+
   DEBUGASSERT(align);
 
   /* Lock angle */
@@ -424,11 +426,15 @@ static void foc_align_dir_hold_b16(FAR struct foc_align_b16_s *align,
         {
           if (dir == DIR_CW_B16)
             {
-              align->diff_cw += (align->angle_now - align->angle_last);
+              tmp = align->angle_now - align->angle_last;
+              angle_norm_2pi_b16(&tmp, -b16PI, b16PI);
+              align->diff_cw += tmp;
             }
           else if (dir == DIR_CCW_B16)
             {
               align->diff_ccw += (align->angle_now - align->angle_last);
+              angle_norm_2pi_b16(&tmp, -b16PI, b16PI);
+              align->diff_ccw += tmp;
             }
           else
             {

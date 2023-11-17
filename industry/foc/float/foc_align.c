@@ -402,6 +402,8 @@ static void foc_align_dir_move_f32(FAR struct foc_align_f32_s *align,
 static void foc_align_dir_hold_f32(FAR struct foc_align_f32_s *align,
                                    float dir, bool last, bool diff)
 {
+  float tmp = 0.0f;
+
   DEBUGASSERT(align);
 
   /* Lock angle */
@@ -424,11 +426,15 @@ static void foc_align_dir_hold_f32(FAR struct foc_align_f32_s *align,
         {
           if (dir == DIR_CW)
             {
-              align->diff_cw += (align->angle_now - align->angle_last);
+              tmp = align->angle_now - align->angle_last;
+              angle_norm_2pi(&tmp, -M_PI_F, M_PI_F);
+              align->diff_cw += tmp;
             }
           else if (dir == DIR_CCW)
             {
-              align->diff_ccw += (align->angle_now - align->angle_last);
+              tmp = align->angle_now - align->angle_last;
+              angle_norm_2pi(&tmp, -M_PI_F, M_PI_F);
+              align->diff_ccw += tmp;
             }
           else
             {
