@@ -643,7 +643,6 @@ static int foc_motor_state(FAR struct foc_motor_f32_s *motor, int state)
 #    error STOP state for sensored mode requires velocity support
 #  endif
 #endif
-
           break;
         }
 
@@ -1061,6 +1060,14 @@ static int foc_motor_run(FAR struct foc_motor_f32_s *motor)
     }
 #endif
 
+
+  /* debug */
+  if (motor->mq.app_state == FOC_EXAMPLE_STATE_STOP)
+    {
+      q_ref = 3;
+    }
+
+
 no_controller:
 
   /* Set DQ reference frame */
@@ -1351,6 +1358,37 @@ errout:
 #endif  /* CONFIG_EXAMPLES_FOC_HAVE_VEL */
 
 /****************************************************************************
+ * Name: foc_motor_sanity
+ ****************************************************************************/
+
+static int foc_motor_sanity(FAR struct foc_motor_f32_s *motor)
+{
+  int ret = OK;
+
+  /* Update every cycle */
+
+  motor->mfault = 0;
+
+#ifdef CONFIG_EXAMPLES_FOC_HAVE_VEL
+  /* Check motor spinout condition */
+
+  if (fabs(motor->vel_el) > motor->vel_spout)
+    {
+      motor->mfault |= FOC_MFAULT_SPINOUT;
+    }
+#endif
+
+  /* Fault condition detected */
+
+  if (motor->mfault != 0 )
+    {
+      motor->ctrl_state = FOC_CTRL_STATE_FAULT;
+    }
+
+  return ret;
+}
+
+/****************************************************************************
  * Public Functions
  ****************************************************************************/
 
@@ -1413,6 +1451,7 @@ int foc_motor_init(FAR struct foc_motor_f32_s *motor,
 #endif
 #ifdef CONFIG_EXAMPLES_FOC_HAVE_VEL
   motor->vel_sat    = CONFIG_EXAMPLES_FOC_VEL_MAX / 1.0f;
+  motor->vel_spout  = motor->vel_sat * 1.1f;
 #endif
 #ifdef CONFIG_EXAMPLES_FOC_HAVE_POS
 #  ifdef CONFIG_EXAMPLES_FOC_POS_CIRCULAR
@@ -1927,9 +1966,18 @@ errout:
 
 int foc_motor_control(FAR struct foc_motor_f32_s *motor)
 {
-  int  ret        = OK;
+  int ret = OK;
 
   DEBUGASSERT(motor);
+
+  /* Check motor sanity */
+
+  ret = foc_motor_sanity(motor);
+  if (ret < 0)
+    {
+      PRINTF("ERROR: foc_motor_sanity failed %d!\n", ret);
+      goto errout;
+    }
 
   /* Controller state machine */
 
@@ -2041,6 +2089,21 @@ int foc_motor_control(FAR struct foc_motor_f32_s *motor)
           break;
         }
 #endif
+
+      case FOC_CTRL_STATE_FAULT:
+        {
+          PRINTF("ERROR: motor fault detected 0x%" PRIx32 "\n", motor->mfault);
+
+          /* Set FOC in IDLE state */
+
+          motor->foc_mode = FOC_HANDLER_MODE_IDLE;
+
+          /* Go to IDLE state */
+
+          motor->ctrl_state += 1;
+
+          break;
+        }
 
       case FOC_CTRL_STATE_IDLE:
         {

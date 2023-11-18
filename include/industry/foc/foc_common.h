@@ -89,6 +89,20 @@ enum foc_openloop_stage_e
   FOC_OPENLOOP_DISABLED   = 3,  /* Open-loop disabled */
 };
 
+/* FOC otor fault state */
+
+enum foc_motor_fault_e
+{
+  FOC_MFAULT_OVERVOLTAGE  = (1 << 0),  /* Over-voltage Fault */
+  FOC_MFAULT_UNDERVOLTAGE = (1 << 1),  /* Under-voltage Fault */
+  FOC_MFAULT_OVERCURRENT  = (1 << 2),  /* Over-current Fault */
+  FOC_MFAULT_OVERPOWER    = (1 << 3),  /* Over-power Fault (electrical) */
+  FOC_MFAULT_OVERTEMP     = (1 << 4),  /* Over-temperature Fault */
+  FOC_MFAULT_OVERLOAD     = (1 << 5),  /* Motor overload Fault (mechanical) */
+  FOC_MFAULT_LOCKED       = (1 << 6),  /* Motor locked Fault */
+  FOC_MFAULT_SPINOUT      = (1 << 7),  /* Motor spinout condition */
+};
+
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/

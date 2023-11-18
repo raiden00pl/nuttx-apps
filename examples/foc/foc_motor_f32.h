@@ -76,6 +76,7 @@ struct foc_motor_f32_s
 #ifdef CONFIG_EXAMPLES_FOC_HAVE_RUN
   int                           foc_mode_run; /* FOC mode for run state */
 #endif
+  uint32_t                      mfault;       /* Motor fault */
 
   /* FOC data ***************************************************************/
 
@@ -134,6 +135,7 @@ struct foc_motor_f32_s
   float                         vel_el;       /* Velocity - electrical */
   float                         vel_mech;     /* Velocity - mechanical */
   float                         vel_filter;   /* Velocity low-pass filter */
+  float                         vel_spout;    /* Spinout velocity threshold */
 #endif
 #ifdef CONFIG_EXAMPLES_FOC_VELOBS
   float                         vel_obs;      /* Velocity observer output */

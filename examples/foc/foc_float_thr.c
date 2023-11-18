@@ -289,15 +289,18 @@ static void foc_float_nxscope(FAR struct foc_nxscope_s *nxs,
   nxscope_put_vfloat(&nxs->nxs, i++, ptr, 1);
 #endif
 
+  ptr = (FAR float *)&motor->vel_el;
+  nxscope_put_vfloat(&nxs->nxs, i++, ptr, 1);
 
-  ptr = (FAR float *)&motor->torq;
-  nxscope_put_vfloat(&nxs->nxs, i++, ptr, 3);
 
-  ptr = (FAR float *)&motor->vel;
-  nxscope_put_vfloat(&nxs->nxs, i++, ptr, 3);
+  /* ptr = (FAR float *)&motor->torq; */
+  /* nxscope_put_vfloat(&nxs->nxs, i++, ptr, 3); */
 
-  ptr = (FAR float *)&motor->pos;
-  nxscope_put_vfloat(&nxs->nxs, i++, ptr, 3);
+  /* ptr = (FAR float *)&motor->vel; */
+  /* nxscope_put_vfloat(&nxs->nxs, i++, ptr, 3); */
+
+  /* ptr = (FAR float *)&motor->pos; */
+  /* nxscope_put_vfloat(&nxs->nxs, i++, ptr, 3); */
 
 
 #ifndef CONFIG_EXAMPLES_FOC_NXSCOPE_CONTROL

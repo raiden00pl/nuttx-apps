@@ -496,6 +496,13 @@ int main(int argc, char *argv[])
 
       if (data.started == false)
         {
+#if defined(CONFIG_EXAMPLES_FOC_NXSCOPE_CONTROL) && \
+    defined(CONFIG_EXAMPLES_FOC_NXSCOPE_START)
+          /* Handle nxscope work */
+
+          foc_nxscope_work(&nxs);
+#endif
+
           /* Is start allowed now ? */
 
           pthread_mutex_lock(&g_start_allowed_lock);
