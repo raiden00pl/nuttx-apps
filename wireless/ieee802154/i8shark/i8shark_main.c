@@ -50,6 +50,7 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
+
 #ifndef CONFIG_IEEE802154_I8SHARK_DAEMON_PRIORITY
 #  define CONFIG_IEEE802154_I8SHARK_DAEMON_PRIORITY SCHED_PRIORITY_DEFAULT
 #endif

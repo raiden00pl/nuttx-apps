@@ -28,6 +28,18 @@ config IEEE802154_I8SAK_STACKSIZE
 	int "i8sak stack size"
 	default 4096
 
+config IEEE802154_I8SAK_DEFAULT_EP_EADDR
+	hex "i8sak default EP EADDR"
+	default 0xAABBCCAABBCC000A
+
+config IEEE802154_I8SAK_DEFAULT_EP_SADDR
+	hex "i8sak default EP SADDR"
+	default 0x000A
+
+config IEEE802154_I8SAK_DEFAULT_EP_PANID
+	hex "i8sak default EP PAID"
+	default 0xABCD
+
 if NET_6LOWPAN
 config IEEE802154_I8SAK_DEFAULT_PORT
 	int "Default Port"

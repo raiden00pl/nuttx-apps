@@ -48,10 +48,11 @@
  ****************************************************************************/
 
 /****************************************************************************
- * Name : i8sak_sniffer_cmd
+ * Name: i8sak_sniffer_cmd
  *
- * Description :
+ * Description:
  *   Sniff for frames (Promiscuous mode)
+ *
  ****************************************************************************/
 
 void i8sak_sniffer_cmd(FAR struct i8sak_s *i8sak, int argc, FAR char *argv[])
@@ -222,7 +223,7 @@ pthread_addr_t i8sak_sniffer_thread(pthread_addr_t arg)
               continue;
             }
 
-          printf("i8sak: sniffer: Data Received:\n");
+          printf("i8sak: sniffer: Data Received %02X:\n", frame.length);
           for (i = 0; i < frame.length; i++)
             {
               printf("%02X", frame.payload[i]);

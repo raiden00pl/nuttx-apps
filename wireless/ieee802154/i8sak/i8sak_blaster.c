@@ -68,10 +68,11 @@ static inline void i8sak_blaster_start(FAR struct i8sak_s *i8sak)
  ****************************************************************************/
 
 /****************************************************************************
- * Name : i8sak_blaster
+ * Name: i8sak_blaster
  *
- * Description :
+ * Description:
  *   Continuously transmit a packet
+ *
  ****************************************************************************/
 
 void i8sak_blaster_cmd(FAR struct i8sak_s *i8sak, int argc, FAR char *argv[])
@@ -85,7 +86,7 @@ void i8sak_blaster_cmd(FAR struct i8sak_s *i8sak, int argc, FAR char *argv[])
       i8sak_blaster_start(i8sak);
     }
 
-  while ((option = getopt(argc, argv, "hqp:f:")) != ERROR)
+  while ((option = getopt(argc, argv, "hqnp:f:")) != ERROR)
     {
       switch (option)
         {
@@ -96,6 +97,7 @@ void i8sak_blaster_cmd(FAR struct i8sak_s *i8sak, int argc, FAR char *argv[])
                     "    -q = quit blasting\n"
                     "    -f = set frame (and starts blaster)\n"
                     "    -p = set period (and start blaster)\n"
+                    "    -n = not set ackreq field\n"
                     "Note: No option starts blaster with defaults\n"
                     , argv[0]);
 
@@ -115,6 +117,11 @@ void i8sak_blaster_cmd(FAR struct i8sak_s *i8sak, int argc, FAR char *argv[])
           case 'f': /* Inline change blaster frame */
             i8sak->payload_len = i8sak_str2payload(optarg,
                                                    &i8sak->payload[0]);
+            i8sak_blaster_start(i8sak);
+            break;
+
+          case 'n': /* Do not set ackreq field */
+            i8sak->noack = true;
             i8sak_blaster_start(i8sak);
             break;
 
@@ -139,10 +146,11 @@ void i8sak_blaster_cmd(FAR struct i8sak_s *i8sak, int argc, FAR char *argv[])
 }
 
 /****************************************************************************
- * Name : i8sak_blaster_thread
+ * Name: i8sak_blaster_thread
  *
- * Description :
+ * Description:
  *   Send frames periodically
+ *
  ****************************************************************************/
 
 pthread_addr_t i8sak_blaster_thread(pthread_addr_t arg)
@@ -174,7 +182,7 @@ pthread_addr_t i8sak_blaster_thread(pthread_addr_t arg)
 
           /* This is a normal transaction, no special handling */
 
-          tx.meta.flags.ackreq = 1;
+          tx.meta.flags.ackreq = i8sak->noack ? 0 : 1;
           tx.meta.flags.usegts = 0;
           tx.meta.ranging = IEEE802154_NON_RANGING;
 

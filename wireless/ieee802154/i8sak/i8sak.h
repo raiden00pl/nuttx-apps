@@ -40,24 +40,6 @@
 
 /* Configuration ************************************************************/
 
-#if !defined(CONFIG_IEEE802154_I8SAK_DEFAULT_EP_EADDR)
-#define CONFIG_IEEE802154_I8SAK_DEFAULT_EP_EADDR 0xAABBCCAABBCC000A
-#endif
-
-#if !defined(CONFIG_IEEE802154_I8SAK_DEFAULT_EP_SADDR)
-#define CONFIG_IEEE802154_I8SAK_DEFAULT_EP_SADDR 0x000A
-#endif
-
-#if !defined(CONFIG_IEEE802154_I8SAK_DEFAULT_EP_PANID)
-#define CONFIG_IEEE802154_I8SAK_DEFAULT_EP_PANID 0xABCD
-#endif
-
-#ifdef CONFIG_NET_6LOWPAN
-#if !defined(CONFIG_IEEE802154_I8SAK_DEFAULT_PORT)
-#define CONFIG_IEEE802154_I8SAK_DEFAULT_PORT 61616
-#endif
-#endif
-
 #define I8SAK_MAX_IFNAME            12
 
 #define I8SAK_DAEMONNAME_FMT        "i8sak_%s"
@@ -158,6 +140,7 @@ struct i8sak_s
 
   uint8_t payload[IEEE802154_MAX_MAC_PAYLOAD_SIZE];
   uint16_t payload_len;
+  bool noack;
 
   /* Fields to hold scan results in */
 
