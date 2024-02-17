@@ -22,7 +22,8 @@
  * Included Files
  ****************************************************************************/
 
-#include "config.h"
+#include <nuttx/config.h>
+/* #include "config.h" */
 
 #include <stdbool.h>
 #include <stdio.h>
