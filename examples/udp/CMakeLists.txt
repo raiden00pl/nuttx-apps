@@ -19,5 +19,55 @@
 # ##############################################################################
 
 if(CONFIG_EXAMPLES_UDP)
-  nuttx_add_application(NAME udp)
+
+  # UDP Test
+
+  set(CSRCS udp_cmdline.c)
+
+  if(CONFIG_EXAMPLES_UDP_NETINIT)
+    list(APPEND CSRCS udp_netinit.c)
+  endif()
+
+  # Target 1
+
+  if(CONFIG_EXAMPLES_UDP_SERVER1)
+    list(APPEND CSRCS udp_server.c)
+  else()
+    list(APPEND CSRCS udp_client.c)
+  endif()
+
+  nuttx_add_application(
+    NAME
+    ${CONFIG_EXAMPLES_UDP_PROGNAME1}
+    SRCS
+    udp_target1.c
+    ${CSRCS}
+    STACKSIZE
+    ${CONFIG_EXAMPLES_UDP_STACKSIZE1}
+    PRIORITY
+    ${CONFIG_EXAMPLES_UDP_PRIORITY1})
+
+  # Target 2
+
+  if(CONFIG_EXAMPLES_UDP_TARGET2)
+
+    if(CONFIG_EXAMPLES_UDP_SERVER1)
+      list(APPEND CSRCS udp_client.c)
+    else()
+      list(APPEND CSRCS udp_server.c)
+    endif()
+
+    nuttx_add_application(
+      NAME
+      ${CONFIG_EXAMPLES_UDP_PROGNAME2}
+      SRCS
+      udp_target2.c
+      ${CSRCS}
+      STACKSIZE
+      ${CONFIG_EXAMPLES_UDP_PRIORITY2}
+      PRIORITY
+      ${CONFIG_EXAMPLES_UDP_STACKSIZE2})
+
+  endif()
+
 endif()
