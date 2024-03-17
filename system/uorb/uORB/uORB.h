@@ -31,6 +31,7 @@
 #include <sys/time.h>
 #include <debug.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include <syslog.h>
 
@@ -110,7 +111,7 @@ typedef uint64_t orb_abstime;
 #  define uorbdebug            _none
 #endif
 
-#define uorbinfo_raw(fmt, ...) syslog(LOG_INFO, fmt "\n", ##__VA_ARGS__)
+#define uorbinfo_raw(fmt, ...) printf(fmt "\n", ##__VA_ARGS__)
 
 /* Generates a pointer to the uORB metadata structure for
  * a given topic.
