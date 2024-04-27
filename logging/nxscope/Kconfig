@@ -60,4 +60,6 @@ config LOGGING_NXSCOPE_DISABLE_PUTLOCK
 		In that case, the user is responsible for ensuring
 		thread-safe operations with nxscope_lock/nxscope_unlock functions.
 
+source "$APPSDIR/logging/nxscope/sensors/Kconfig"
+
 endif # LOGGING_NXSCOPE

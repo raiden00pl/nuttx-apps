@@ -1,5 +1,5 @@
 ############################################################################
-# apps/logging/nxscope/Make.defs
+# apps/logging/nxscope/sensors/CMakeLists.txt
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -18,9 +18,14 @@
 #
 ############################################################################
 
-ifneq ($(CONFIG_LOGGING_NXSCOPE),)
-CONFIGURED_APPS += $(APPDIR)/logging/nxscope
-
-include $(wildcard $(APPDIR)/logging/nxscope/*/Make.defs)
-
-endif
+if(CONFIG_NXSCOPE_SENSORS)
+  nuttx_add_application(
+    NAME
+    ${CONFIG_NXSCOPE_SENSORS_PROGNAME}
+    SRCS
+    nxscope_main.c
+    STACKSIZE
+    ${CONFIG_NXSCOPE_SENSORS_STACKSIZE}
+    PRIORITY
+    ${CONFIG_NXSCOPE_SENSORS_PRIORITY})
+endif()

@@ -19,6 +19,8 @@
 # ##############################################################################
 
 if(CONFIG_LOGGING_NXSCOPE)
+  nuttx_add_subdirectory()
+
   set(CSRCS nxscope.c nxscope_chan.c nxscope_internals.c)
 
   if(CONFIG_LOGGING_NXSCOPE_INTF_SERIAL)

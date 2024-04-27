@@ -1,5 +1,5 @@
 ############################################################################
-# apps/logging/nxscope/Make.defs
+# apps/logging/nxscope/sensors/Makefile
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -18,9 +18,19 @@
 #
 ############################################################################
 
-ifneq ($(CONFIG_LOGGING_NXSCOPE),)
-CONFIGURED_APPS += $(APPDIR)/logging/nxscope
+include $(APPDIR)/Make.defs
 
-include $(wildcard $(APPDIR)/logging/nxscope/*/Make.defs)
+# nxscope built-in application info
 
-endif
+PROGNAME  = $(CONFIG_NXSCOPE_SENSORS_PROGNAME)
+PRIORITY  = $(CONFIG_NXSCOPE_SENSORS_PRIORITY)
+STACKSIZE = $(CONFIG_NXSCOPE_SENSORS_STACKSIZE)
+MODULE    = $(CONFIG_NXSCOPE_SENSORS)
+
+# NxScope example
+
+MAINSRC = nxscope_main.c
+
+CSRCS =
+
+include $(APPDIR)/Application.mk
