@@ -21,6 +21,13 @@ config LOGGING_NXSCOPE_INTF_DUMMY
 	---help---
 		Useful for debug purposes. For details, see logging/nxscope/nxscope_idummy.c
 
+config LOGGING_NXSCOPE_INTF_FILE
+	bool "NxScope file interface support"
+	default n
+	---help---
+		Simple file interface that uses read() and write() that can be used with
+		named pipes. For details, see logging/nxscope/nxscope_ifile.c
+
 config LOGGING_NXSCOPE_PROTO_SER
 	bool "NxScope default serial protocol support"
 	default y
