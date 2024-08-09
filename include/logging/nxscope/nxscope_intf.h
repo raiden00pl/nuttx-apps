@@ -82,7 +82,7 @@ struct nxscope_intf_s
 #ifdef CONFIG_LOGGING_NXSCOPE_INTF_DUMMY
 /* Nxscope dummy interface configuration */
 
-struct nxscope_dummy_cfg_s
+  struct nxscope_dummy_cfg_s
 {
   int res;                      /* Reserved */
 };
@@ -96,6 +96,16 @@ struct nxscope_ser_cfg_s
   FAR char *path;               /* Device path */
   bool      nonblock;           /* Nonblocking operation */
   speed_t   baud;               /* Baud rate. Ignored if set to 0 */
+};
+#endif
+
+#ifdef CONFIG_LOGGING_NXSCOPE_INTF_FILE
+/* Nxscope file interface configuration */
+
+struct nxscope_file_cfg_s
+{
+  FAR char *path;               /* Device path */
+  bool      nonblock;           /* Nonblocking operation */
 };
 #endif
 
@@ -131,6 +141,21 @@ int nxscope_ser_init(FAR struct nxscope_intf_s *intf,
  ****************************************************************************/
 
 void nxscope_ser_deinit(FAR struct nxscope_intf_s *intf);
+#endif
+
+#ifdef CONFIG_LOGGING_NXSCOPE_INTF_FILE
+/****************************************************************************
+ * Name: nxscope_file_init
+ ****************************************************************************/
+
+int nxscope_file_init(FAR struct nxscope_intf_s *intf,
+                     FAR struct nxscope_file_cfg_s *cfg);
+
+/****************************************************************************
+ * Name: nxscope_file_deinit
+ ****************************************************************************/
+
+void nxscope_file_deinit(FAR struct nxscope_intf_s *intf);
 #endif
 
 #undef EXTERN
