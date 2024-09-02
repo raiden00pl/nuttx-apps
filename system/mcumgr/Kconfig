@@ -1,0 +1,21 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+menuconfig SYSTEM_MCUMGR
+	tristate "MCUmgr support"
+	default n
+	depends on FSUTILS_TINYCBOR_LIB
+	---help---
+		Enable support for MCUmgr
+
+if SYSTEM_MCUMGR
+
+config SYSTEM_MCUMGR_REF
+	string "Ref"
+	default "911e538756b9f4c863c65f1514e1aaca0484c1c3"
+	---help---
+		Git ref name to use when downloading from mcumgr repo
+
+endif # SYSTEM_MCUMGR
