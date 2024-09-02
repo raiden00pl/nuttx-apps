@@ -161,8 +161,8 @@ void zcbor_map_decode_bulk_reset(FAR struct zcbor_map_decode_key_val *map,
 {
   size_t map_index;
 
-	for (size_map_index = 0; map_index < map_size; ++map_index)
+	for (map_index = 0; map_index < map_size; ++map_index)
     {
-		map[map_index].found = false;
+      map[map_index].found = false;
     }
 }
