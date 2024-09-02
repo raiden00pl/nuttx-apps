@@ -47,8 +47,8 @@ int zcbor_map_decode_bulk(FAR zcbor_state_t *zsd,
 
 	if (!zcbor_map_start_decode(zsd))
     {
-		return -EBADMSG;
-	}
+      return -EBADMSG;
+    }
 
 	*matched = 0;
 	ok = true;
@@ -71,7 +71,6 @@ int zcbor_map_decode_bulk(FAR zcbor_state_t *zsd,
           if (key.len == dptr->key.len &&
               memcmp(key.value, dptr->key.value, key.len) == 0)
             {
-
               if (dptr->found)
                 {
                   return -EADDRINUSE;
@@ -104,6 +103,7 @@ int zcbor_map_decode_bulk(FAR zcbor_state_t *zsd,
         {
           ok = zcbor_any_skip(zsd, NULL);
         }
+
     } while (ok);
 
 	return zcbor_map_end_decode(zsd) ? 0 : -EBADMSG;
@@ -119,8 +119,8 @@ bool zcbor_map_decode_bulk_key_found(FAR struct zcbor_map_decode_key_val *map,
   FAR struct zcbor_map_decode_key_val *dptr = map;
 	size_t key_len;
 
-	/* Lazy run, comparing pointers only assuming that compiler will be able to store
-	 * read-only string of the same value as single instance.
+	/* Lazy run, comparing pointers only assuming that compiler will be able
+   * to store read-only string of the same value as single instance.
 	 */
 
 	while (dptr < (map + map_size))
