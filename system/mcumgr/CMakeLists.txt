@@ -21,46 +21,8 @@
 if(CONFIG_SYSTEM_MCUMGR)
   nuttx_add_library(mcumgr)
 
-  if(NOT EXISTS ${CMAKE_CURRENT_LIST_DIR}/mcumgr)
-    FetchContent_Declare(
-      mcumgr
-      DOWNLOAD_NAME "${CONFIG_SYSTEM_MCUMGR_REF}.tar.gz"
-      DOWNLOAD_DIR ${CMAKE_CURRENT_LIST_DIR}
-      URL "https://github.com/raiden00pl/nuttx-mcumgr/archive/${CONFIG_SYSTEM_MCUMGR_REF}.tar.gz"
-          SOURCE_DIR
-          ${CMAKE_CURRENT_LIST_DIR}/nuttx-mcumgr
-          BINARY_DIR
-          ${CMAKE_BINARY_DIR}/apps/system/mcumgr/nuttx-mcumgr
-          CONFIGURE_COMMAND
-          ""
-          BUILD_COMMAND
-          ""
-          INSTALL_COMMAND
-          ""
-          TEST_COMMAND
-          ""
-      DOWNLOAD_NO_PROGRESS true
-      TIMEOUT 30)
-
-    FetchContent_GetProperties(mcumgr)
-
-    if(NOT mcumgr_POPULATED)
-      FetchContent_Populate(mcumgr)
-    endif()
-  endif()
-
-  # porting sources
-  set(SRCS_PORTING
-      porting/fs_mgmt.c
-      porting/img_mgmt.c
-      porting/img_mgmt_log.c
-      porting/log_mgmt.c
-      porting/os_mgmt.c
-      porting/shell_mgmt.c
-      porting/stat_mgmt.c)
-
   # mcumgr sources
-  set(SRCS_MCUMGR
+  set(SRCS
       nuttx-mcumgr/cborattr/src/cborattr.c
       nuttx-mcumgr/mgmt/src/mgmt.c
       nuttx-mcumgr/cmd/fs_mgmt/src/fs_mgmt.c
@@ -72,10 +34,7 @@ if(CONFIG_SYSTEM_MCUMGR)
       nuttx-mcumgr/cmd/shell_mgmt/src/shell_mgmt.c
       nuttx-mcumgr/cmd/stat_mgmt/src/stat_mgmt.c)
 
-  target_include_directories(mcumgr PUBLIC config nuttx-mcumgr/include)
-
-  set(SRCS ${SRCS_PORTING} ${SRCS_MCUMGR})
+  target_include_directories(mcumgr PUBLIC include)
 
   target_sources(mcumgr PRIVATE ${SRCS})
-
 endif()

@@ -6,16 +6,10 @@
 menuconfig SYSTEM_MCUMGR
 	tristate "MCUmgr support"
 	default n
-	depends on FSUTILS_TINYCBOR_LIB
+	depends on FSUTILS_ZCBOR
 	---help---
 		Enable support for MCUmgr
 
 if SYSTEM_MCUMGR
-
-config SYSTEM_MCUMGR_REF
-	string "Ref"
-	default "911e538756b9f4c863c65f1514e1aaca0484c1c3"
-	---help---
-		Git ref name to use when downloading from mcumgr repo
 
 endif # SYSTEM_MCUMGR

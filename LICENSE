@@ -2248,3 +2248,17 @@ AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
+
+system/mcumgr/
+==============
+
+Based on the Zephyr Project mcumgr implementation from:
+
+  https://github.com/zephyrproject-rtos/zephyr/tree/main/subsys/mgmt/mcumgr
+
+which is licensed as:
+
+  Copyright (c) 2018-2021 mcumgr authors
+  Copyright (c) 2022-2024 Nordic Semiconductor ASA
+
+  SPDX-License-Identifier: Apache-2.0
