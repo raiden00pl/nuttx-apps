@@ -4,43 +4,11 @@
 
 menuconfig MCUMGR
 	bool "mcumgr Support"
-	depends on NET_BUF
 	depends on ZCBOR
-	depends on CRC
 	help
 	  This option enables the mcumgr management library.
 
 if MCUMGR
-
-config MCUMGR_MGMT_NOTIFICATION_HOOKS
-	bool "MCUmgr notification hook support"
-	help
-	  With this enabled, applications and parts of code can register for MCUmgr event
-	  notifications which will result in callbacks when a registered event occurs. Note that
-	  this enables the base notification functionality but itself does not enable any
-	  notifications, which must be enabled by selecting other Kconfig options.
-
-	  To enable notifications in code, mgmt_callback_register() must be called with the
-	  callback function and events that want to be received. Multiple handlers can be
-	  registered and will all be called when registered events occur.
-
-	  Some callbacks support notifying the calling function of a status, in which to accept
-	  or decline the current operation, by returning false this will signal to the calling
-	  function that the request should be denied, for informal-only notifications or
-	  acceptable, true must be returned by all the registered notification handlers.
-
-config MCUMGR_MGMT_HANDLER_USER_DATA
-	bool "MCUmgr mgmt handler user data support"
-	help
-	  This will add an extra field to the struct mgmt_handler that will allow a user
-	  to pass user_data when the defined handler is called.
-
-config MCUMGR_MGMT_CUSTOM_PAYLOAD
-	bool "MCUmgr custom payload"
-	help
-	  When this config is enabled, a user can use the field `custom_payload` in `mgmt_handler` to
-	  skip the generation of the cbor start- and end byte in `smp_handle_single_payload` and
-	  instead use a user defined payload in SMP messages.
 
 config MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES
 	int "Number of predicted maximum entries to main response map"
@@ -104,40 +72,6 @@ config MCUMGR_SMP_CBOR_MAX_DECODING_LEVELS
 	  This number translates to zcbor backup states, it increases
 	  size of cbor_nb_reader structure by zcbor_state_t size per
 	  one unit selected here.
-
-config MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
-	bool "Support original protocol"
-	default y
-	help
-	  This option will enable supporting the original SMP protocol whereby
-	  all errors are returned in the "rc" field as well as the new protocol
-	  whereby there is a dedicated entry for command error/result codes.
-	  The protocol selection is indicated by the request header sent by the
-	  client.
-
-config MCUMGR_SMP_VERBOSE_ERR_RESPONSE
-	bool "Support verbose error response"
-	depends on MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
-	help
-	  Support for encoding "rc" code explanation in form of "rsn"
-	  text string.  This is useful, when returning MGMT_ERR_EUNKNOWN,
-	  to add additional information on the source of an error.
-	  Note that the "rsn" is string additional to "rc" code,
-	  so MCUMGR_TRANSPORT_NETBUF_SIZE should be large enough to be able
-	  to encode both.
-
-config MCUMGR_SMP_LEGACY_RC_BEHAVIOUR
-	bool "Legacy rc (result code) response behaviour"
-	depends on MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
-	help
-	  This will enable legacy result code response behaviour of having rc
-	  present in responses when the status is 0. With this option disabled,
-	  mcumgr acts with new behaviour and will only return rc is the result
-	  code is non-zero (i.e. an error occurred).
-
-	  If a command only returns a result code, this will mean that the
-	  response will be empty with the new behaviour enabled, as opposed to
-	  the old behaviour where the rc field will be present in the response.
 
 menu "Command Handlers"
 

@@ -182,18 +182,11 @@ static int smp_build_err_rsp(FAR struct smp_streamer *streamer,
   struct smp_hdr             rsp_hdr;
   bool                       ok;
 
+  ARG_UNUSED(rc_rsn);
+
   ok = zcbor_map_start_encode(zsp, 2) && zcbor_tstr_put_lit(zsp, "rc")
        && zcbor_int32_put(zsp, status);
 
-#ifdef CONFIG_MCUMGR_SMP_VERBOSE_ERR_RESPONSE
-  if (ok && rc_rsn != NULL)
-    {
-      ok = zcbor_tstr_put_lit(zsp, "rsn")
-           && zcbor_tstr_put_term(zsp, rc_rsn, CONFIG_ZCBOR_MAX_STR_LEN);
-    }
-#else
-  ARG_UNUSED(rc_rsn);
-#endif
   ok &= zcbor_map_end_encode(zsp, 2);
 
   if (!ok)

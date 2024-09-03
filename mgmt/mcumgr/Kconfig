@@ -4,12 +4,39 @@
 #
 
 menuconfig MGMT_MCUMGR
-	tristate "MCUmgr support"
+	bool "MCUmgr support"
 	default n
 	depends on FSUTILS_ZCBOR
 	---help---
 		Enable support for MCUmgr
 
 if MGMT_MCUMGR
+
+bool MGMT_MCUMGR_DAEMON
+	bool "MCUmgr daemon support"
+	default n
+
+config MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+	bool "Support original protocol"
+	default y
+	---help---
+	  This option will enable supporting the original SMP protocol whereby
+	  all errors are returned in the "rc" field as well as the new protocol
+	  whereby there is a dedicated entry for command error/result codes.
+	  The protocol selection is indicated by the request header sent by the
+	  client.
+
+config MCUMGR_SMP_LEGACY_RC_BEHAVIOUR
+	bool "Legacy rc (result code) response behaviour"
+	depends on MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+	---help---
+	  This will enable legacy result code response behaviour of having rc
+	  present in responses when the status is 0. With this option disabled,
+	  mcumgr acts with new behaviour and will only return rc is the result
+	  code is non-zero (i.e. an error occurred).
+
+	  If a command only returns a result code, this will mean that the
+	  response will be empty with the new behaviour enabled, as opposed to
+	  the old behaviour where the rc field will be present in the response.
 
 endif # MGMT_MCUMGR

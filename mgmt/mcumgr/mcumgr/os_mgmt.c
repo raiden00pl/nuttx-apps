@@ -38,12 +38,9 @@
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
+
 #ifdef CONFIG_REBOOT
 #include <zephyr/sys/reboot.h>
-#endif
-
-#ifdef CONFIG_MCUMGR_MGMT_NOTIFICATION_HOOKS
-#include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
 #endif
 
 #ifdef CONFIG_MCUMGR_GRP_OS_INFO
