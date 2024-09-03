@@ -19,70 +19,12 @@
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
 
+#include "smp_err.h"
+
 #include <mgmt/mcumgr/transport/smp_internal.h>
 
 #ifdef CONFIG_MCUMGR_MGMT_NOTIFICATION_HOOKS
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
-#endif
-
-#ifdef CONFIG_MCUMGR_GRP_FS
-#include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt.h>
-#endif
-#ifdef CONFIG_MCUMGR_GRP_IMG
-#include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
-#endif
-#ifdef CONFIG_MCUMGR_GRP_OS
-#include <zephyr/mgmt/mcumgr/grp/os_mgmt/os_mgmt.h>
-#endif
-#ifdef CONFIG_MCUMGR_GRP_SHELL
-#include <zephyr/mgmt/mcumgr/grp/shell_mgmt/shell_mgmt.h>
-#endif
-#ifdef CONFIG_MCUMGR_GRP_STAT
-#include <zephyr/mgmt/mcumgr/grp/stat_mgmt/stat_mgmt.h>
-#endif
-#ifdef CONFIG_MCUMGR_GRP_ZBASIC
-#include <zephyr/mgmt/mcumgr/grp/zephyr/zephyr_basic.h>
-#endif
-
-#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
-static int smp_translate_error_code(uint16_t group, uint16_t ret)
-{
-  switch (group)
-    {
-#ifdef CONFIG_MCUMGR_GRP_OS
-      case MGMT_GROUP_ID_OS:
-        return os_mgmt_translate_error_code(ret);
-#endif
-
-#ifdef CONFIG_MCUMGR_GRP_IMG
-      case MGMT_GROUP_ID_IMAGE:
-        return img_mgmt_translate_error_code(ret);
-#endif
-
-#ifdef CONFIG_MCUMGR_GRP_STAT
-      case MGMT_GROUP_ID_STAT:
-        return stat_mgmt_translate_error_code(ret);
-#endif
-
-#ifdef CONFIG_MCUMGR_GRP_FS
-      case MGMT_GROUP_ID_FS:
-        return fs_mgmt_translate_error_code(ret);
-#endif
-
-#ifdef CONFIG_MCUMGR_GRP_SHELL
-      case MGMT_GROUP_ID_SHELL:
-        return shell_mgmt_translate_error_code(ret);
-#endif
-
-#ifdef CONFIG_MCUMGR_GRP_ZBASIC
-      case ZEPHYR_MGMT_GRP_BASIC:
-        return zephyr_basic_group_translate_error_code(ret);
-#endif
-
-      default:
-        return MGMT_ERR_EUNKNOWN;
-    }
-}
 #endif
 
 static void cbor_nb_reader_init(struct cbor_nb_reader *cnr,
@@ -380,9 +322,11 @@ static void smp_on_err(struct smp_streamer *streamer,
     }
 
   /* Clear the partial response from the buffer, if any. */
+
   cbor_nb_writer_init(streamer->writer, rsp);
 
   /* Build and transmit the error response. */
+
   rc = smp_build_err_rsp(streamer, req_hdr, status, rsn);
   if (rc == 0)
     {
@@ -391,6 +335,7 @@ static void smp_on_err(struct smp_streamer *streamer,
     }
 
   /* Free any extra buffers. */
+
   smp_free_buf(req, streamer->smpt);
   smp_free_buf(rsp, streamer->smpt);
 }
@@ -408,8 +353,8 @@ static void smp_on_err(struct smp_streamer *streamer,
  *   The function will return MGMT_ERR_EOK (0) when given an empty input
  *   stream, and will also release the buffer from the stream; it does not
  *   return MTMT_ERR_ECORRUPT, or any other MGMT error, because there was no
- *error while processing of the input stream, it is callers fault that an
- *empty stream has been passed to the function.
+ *   error while processing of the input stream, it is callers fault that an
+ *   empty stream has been passed to the function.
  *
  * Input parameters:
  *   streamer	- The streamer to use for reading, writing, and transmitting.

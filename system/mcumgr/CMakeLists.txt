@@ -22,17 +22,7 @@ if(CONFIG_SYSTEM_MCUMGR)
   nuttx_add_library(mcumgr)
 
   # mcumgr sources
-  set(SRCS
-      nuttx-mcumgr/cborattr/src/cborattr.c
-      nuttx-mcumgr/mgmt/src/mgmt.c
-      nuttx-mcumgr/cmd/fs_mgmt/src/fs_mgmt.c
-      nuttx-mcumgr/cmd/img_mgmt/src/img_mgmt.c
-      nuttx-mcumgr/cmd/img_mgmt/src/img_mgmt_state.c
-      nuttx-mcumgr/cmd/img_mgmt/src/img_mgmt_util.c
-      nuttx-mcumgr/cmd/log_mgmt/src/log_mgmt.c
-      nuttx-mcumgr/cmd/os_mgmt/src/os_mgmt.c
-      nuttx-mcumgr/cmd/shell_mgmt/src/shell_mgmt.c
-      nuttx-mcumgr/cmd/stat_mgmt/src/stat_mgmt.c)
+  set(SRCS )
 
   target_include_directories(mcumgr PUBLIC include)
 

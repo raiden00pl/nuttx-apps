@@ -24,6 +24,7 @@ include $(APPDIR)/Make.defs
 
 # CSRCS += mcumgr/mgmt/mgmt.c
 # CSRCS += mcumgr/smp/smp.c
+# CSRCS += mcumgr/smp/smp_err.c
 CSRCS += mcumgr/util/zcbor_bulk.c
 
 # mcumgr includes
