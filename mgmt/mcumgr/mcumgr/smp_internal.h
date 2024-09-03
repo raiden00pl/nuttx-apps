@@ -1,5 +1,5 @@
 /****************************************************************************
- * apps/system/mcumgr/mcumgr/include/mcumgr/smp_internal.h
+ * apps/mgmt/mcumgr/mcumgr/smp_internal.h
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,8 +18,8 @@
  *
  ****************************************************************************/
 
-#ifndef __SYSTEM_MCUMGR_MCUMGR_INCLUDE_MCUMGR_SMP_INTERNAL_H
-#define __SYSTEM_MCUMGR_MCUMGR_INCLUDE_MCUMGR_SMP_INTERNAL_H
+#ifndef __MGMT_MCUMGR_MCUMGR_SMP_INTERNAL_H
+#define __MGMT_MCUMGR_MCUMGR_SMP_INTERNAL_H
 
 /****************************************************************************
  * Included Files
@@ -63,7 +63,7 @@ struct smp_hdr
 struct smp_transport;
 
 /****************************************************************************
- * Public Function Prototyppes
+ * Public Function Prototypes
  ****************************************************************************/
 
 /****************************************************************************
@@ -119,4 +119,4 @@ void smp_free_buf(FAR void *buf, FAR void *arg);
 }
 #endif
 
-#endif /* __SYSTEM_MCUMGR_MCUMGR_INCLUDE_MCUMGR_SMP_INTERNAL_H */
+#endif /* __MGMT_MCUMGR_MCUMGR_SMP_INTERNAL_H */

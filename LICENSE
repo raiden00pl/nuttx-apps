@@ -2249,12 +2249,14 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
-system/mcumgr/
-==============
+mgmt/mcumgr/
+include/mgmt/mcumgr/
+=====================
 
 Based on the Zephyr Project mcumgr implementation from:
 
   https://github.com/zephyrproject-rtos/zephyr/tree/main/subsys/mgmt/mcumgr
+  https://github.com/zephyrproject-rtos/zephyr/tree/main/include/zephyr/mgmt/mcumgr
 
 which is licensed as:
 

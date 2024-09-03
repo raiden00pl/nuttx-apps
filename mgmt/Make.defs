@@ -1,5 +1,5 @@
 ############################################################################
-# apps/system/mcumgr/Make.defs
+# apps/mgmt/Make.defs
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -18,6 +18,4 @@
 #
 ############################################################################
 
-ifneq ($(CONFIG_SYSTEM_MCUMGR),)
-CONFIGURED_APPS += $(APPDIR)/system/mcumgr
-endif
+include $(wildcard $(APPDIR)/mgmt/*/Make.defs)

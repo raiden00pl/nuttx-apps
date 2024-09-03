@@ -1,5 +1,5 @@
 /****************************************************************************
- * apps/system/mcumgr/mcumgr/smp/smp_err.c
+ * apps/mgmt/mcumgr/smp_err.c
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with

@@ -1,5 +1,5 @@
 ############################################################################
-# apps/system/mcumgr/Makefile
+# apps/mgmt/Makefile
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -18,20 +18,6 @@
 #
 ############################################################################
 
-include $(APPDIR)/Make.defs
+MENUDESC = "Device Management Applications"
 
-# mcumgr sources
-
-# CSRCS += mcumgr/mgmt/mgmt.c
-# CSRCS += mcumgr/smp/smp.c
-# CSRCS += mcumgr/smp/smp_err.c
-CSRCS += mcumgr/util/zcbor_bulk.c
-
-# mcumgr includes
-
-MCUMGR_ALL_INC = mcumgr/include
-
-CFLAGS += $(addprefix ${INCDIR_PREFIX}, $(MCUMGR_ALL_INC))
-CXXFLAGS += $(addprefix ${INCDIR_PREFIX}, $(MCUGMR_ALL_INC))
-
-include $(APPDIR)/Application.mk
+include $(APPDIR)/Directory.mk

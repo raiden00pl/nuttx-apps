@@ -1,5 +1,5 @@
 /****************************************************************************
- * apps/system/mcumgr/util/zcbor_bulk.c
+ * apps/mgmt/mcumgr/zcbor_bulk.c
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -28,10 +28,10 @@
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
 
-#include <mcumgr/zcbor_bulk.h>
+#include "zcbor_bulk.h"
 
 /****************************************************************************
- * Public Function Prototypes
+ * Public Function
  ****************************************************************************/
 
 /****************************************************************************

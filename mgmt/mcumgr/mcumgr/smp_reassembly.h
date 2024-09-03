@@ -1,5 +1,5 @@
 /****************************************************************************
- * apps/system/mcumgr/mcumgr/include/mcumgr/smp_reassembly.h
+ * apps/mgmt/mcumgr/mcumgr/smp_reassembly.h
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,12 +18,14 @@
  *
  ****************************************************************************/
 
-#ifndef __SYSTEM_MCUMGR_MCUMGR_INCLUDE_MCUMGR_SMP_REASSEMBLY_H
-#define __SYSTEM_MCUMGR_MCUMGR_INCLUDE_MCUMGR_SMP_REASSEMBLY_H
+#ifndef __MGMT_MCUMGR_MCUMGR_SMP_REASSEMBLY_H
+#define __MGMT_MCUMGR_MCUMGR_SMP_REASSEMBLY_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+
+#include "mgmt/mcumgr/smp.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -34,14 +36,12 @@ extern "C"
  * Public Types
  ****************************************************************************/
 
-struct smp_transport;
-
 /****************************************************************************
- * Public Function Prototyppes
+ * Public Function Prototypes
  ****************************************************************************/
 
 /****************************************************************************
- * Name:
+ * Name: smp_reassembly_init
  *
  * Description:
  *   Initialize re-assembly context within smp_transport
@@ -58,7 +58,7 @@ struct smp_transport;
 void smp_reassembly_init(FAR struct smp_transport *smpt);
 
 /****************************************************************************
- * Name:
+ * Name: smp_reassembly_collect
  *
  * Description:
  *   Collect data to re-assembly buffer
@@ -102,7 +102,7 @@ int smp_reassembly_collect(FAR struct smp_transport *smpt,
                            FAR const void *buf, uint16_t len);
 
 /****************************************************************************
- * Name:
+ * Name: smp_reassembly_expected
  *
  * Description:
  *   Return number of expected bytes to complete the packet
@@ -124,7 +124,7 @@ int smp_reassembly_collect(FAR struct smp_transport *smpt,
 int smp_reassembly_expected(FAR const struct smp_transport *smpt);
 
 /****************************************************************************
- * Name:
+ * Name: smp_reassembly_complete
  *
  * Description:
  *   Pass packet for further processing
@@ -161,7 +161,7 @@ int smp_reassembly_expected(FAR const struct smp_transport *smpt);
 int smp_reassembly_complete(FAR struct smp_transport *smpt, bool force);
 
 /****************************************************************************
- * Name:
+ * Name: smp_reassembly_drop
  *
  * Description:
  *   Drop packet and release buffer
@@ -181,7 +181,7 @@ int smp_reassembly_complete(FAR struct smp_transport *smpt, bool force);
 int smp_reassembly_drop(FAR struct smp_transport *smpt);
 
 /****************************************************************************
- * Name:
+ * Name: smp_reassembly_get_ud
  *
  * Description:
  *   Get "user data" pointer for current packet re-assembly
@@ -207,4 +207,4 @@ FAR void *smp_reassembly_get_ud(FAR const struct smp_transport *smpt);
 }
 #endif
 
-#endif /* __SYSTEM_MCUMGR_MCUMGR_INCLUDE_MCUMGR_SMP_REASSEMBLY_H */
+#endif /* __MGMT_MCUMGR_MCUMGR_SMP_REASSEMBLY_H */

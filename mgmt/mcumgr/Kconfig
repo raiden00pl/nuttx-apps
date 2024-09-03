@@ -3,13 +3,13 @@
 # see the file kconfig-language.txt in the NuttX tools repository.
 #
 
-menuconfig SYSTEM_MCUMGR
+menuconfig MGMT_MCUMGR
 	tristate "MCUmgr support"
 	default n
 	depends on FSUTILS_ZCBOR
 	---help---
 		Enable support for MCUmgr
 
-if SYSTEM_MCUMGR
+if MGMT_MCUMGR
 
-endif # SYSTEM_MCUMGR
+endif # MGMT_MCUMGR

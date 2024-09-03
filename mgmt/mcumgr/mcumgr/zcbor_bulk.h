@@ -1,5 +1,5 @@
 /****************************************************************************
- * apps/system/mcumgr/mcumgr/include/mcumgr/zcbor_bulk.h
+ * apps/mgmt/mcumgr/mcumgr/zcbor_bulk.h
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,8 +18,8 @@
  *
  ****************************************************************************/
 
-#ifndef __SYSTEM_MCUMGR_MCUMGR_INCLUDE_MCUMGR_ZCBOR_BULK_H
-#define __SYSTEM_MCUMGR_MCUMGR_INCLUDE_MCUMGR_ZCBOR_BULK_H
+#ifndef __MGMT_MCUMGR_MCUMGR_ZCBOR_BULK_H
+#define __MGMT_MCUMGR_MCUMGR_ZCBOR_BULK_H
 
 /****************************************************************************
  * Included Files
@@ -44,12 +44,12 @@
  * The macro creates a single zcbor_map_decode_key_val type object.
  *
  * Input Parameters:
- *   - k - key; the @p k will be stringified so should be given without "";
- *   - dec -decoder function; this should be zcbor_decoder_t
- *    type function from zcbor or a user provided implementation
- *    compatible with the type.
- *   - vp non-NULL pointer for result of decoding; should correspond
- *     to type served by decoder function for the mapping.
+ *   k   - key; the @p k will be stringified so should be given without "";
+ *   dec - decoder function; this should be zcbor_decoder_t
+ *         type function from zcbor or a user provided implementation
+ *         compatible with the type.
+ *   vp - non-NULL pointer for result of decoding; should correspond
+ *        to type served by decoder function for the mapping.
  *
  ****************************************************************************/
 
@@ -65,12 +65,12 @@
  *   The macro creates a single zcbor_map_decode_key_val type object.
  *
  * Input Parameters:
- *   - k key is "" enclosed string representing key;
- *   - dec decoder function; this should be zcbor_decoder_t
- *     type function from zcbor or a user provided implementation
- *     compatible with the type.
- *   - vp non-NULL pointer for result of decoding; should correspond
- *     to type served by decoder function for the mapping.
+ *   k   - key is "" enclosed string representing key;
+ *   dec - decoder function; this should be zcbor_decoder_t
+ *         type function from zcbor or a user provided implementation
+ *         compatible with the type.
+ *   vp  - non-NULL pointer for result of decoding; should correspond
+ *         to type served by decoder function for the mapping.
  *
  ****************************************************************************/
 
@@ -201,4 +201,4 @@ void zcbor_map_decode_bulk_reset(FAR struct zcbor_map_decode_key_val *map,
 }
 #endif
 
-#endif /* __SYSTEM_MCUMGR_MCUMGR_INCLUDE_MCUMGR_ZCBOR_BULK_H */
+#endif /* __MGMT_MCUMGR_MCUMGR_ZCBOR_BULK_H */

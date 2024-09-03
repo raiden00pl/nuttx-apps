@@ -1,5 +1,5 @@
 # ##############################################################################
-# apps/system/mcumgr/CMakeLists.txt
+# apps/mgmt/mcumgr/CMakeLists.txt
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more contributor
 # license agreements.  See the NOTICE file distributed with this work for
@@ -18,13 +18,13 @@
 #
 # ##############################################################################
 
-if(CONFIG_SYSTEM_MCUMGR)
+if(CONFIG_MGMT_MCUMGR)
   nuttx_add_library(mcumgr)
 
   # mcumgr sources
   set(SRCS )
 
-  target_include_directories(mcumgr PUBLIC include)
+  target_include_directories(mcumgr PRIVATE include)
 
   target_sources(mcumgr PRIVATE ${SRCS})
 endif()
