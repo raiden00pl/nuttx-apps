@@ -29,6 +29,19 @@ config MCUMGR_MGMT_NOTIFICATION_HOOKS
 	  function that the request should be denied, for informal-only notifications or
 	  acceptable, true must be returned by all the registered notification handlers.
 
+config MCUMGR_MGMT_HANDLER_USER_DATA
+	bool "MCUmgr mgmt handler user data support"
+	help
+	  This will add an extra field to the struct mgmt_handler that will allow a user
+	  to pass user_data when the defined handler is called.
+
+config MCUMGR_MGMT_CUSTOM_PAYLOAD
+	bool "MCUmgr custom payload"
+	help
+	  When this config is enabled, a user can use the field `custom_payload` in `mgmt_handler` to
+	  skip the generation of the cbor start- and end byte in `smp_handle_single_payload` and
+	  instead use a user defined payload in SMP messages.
+
 config MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES
 	int "Number of predicted maximum entries to main response map"
 	default 15
@@ -91,13 +104,6 @@ config MCUMGR_SMP_CBOR_MAX_DECODING_LEVELS
 	  This number translates to zcbor backup states, it increases
 	  size of cbor_nb_reader structure by zcbor_state_t size per
 	  one unit selected here.
-
-config MCUMGR_SMP_COMMAND_STATUS_HOOKS
-	bool "SMP command status hooks"
-	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
-	help
-	  This will enable SMP command status notification hooks for when an SMP message is
-	  received or processed.
 
 config MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 	bool "Support original protocol"

@@ -39,10 +39,6 @@
 
 #include "transport/smp_internal.h"
 
-#ifdef CONFIG_MCUMGR_MGMT_NOTIFICATION_HOOKS
-#include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
-#endif
-
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 /****************************************************************************
  * Name:
@@ -181,10 +177,10 @@ static int smp_build_err_rsp(FAR struct smp_streamer *streamer,
                              FAR const struct smp_hdr *req_hdr, int status,
                              FAR const char *rc_rsn)
 {
-  struct cbor_nb_writer *nbw = streamer->writer;
-  zcbor_state_t *zsp         = nbw->zs;
-  struct smp_hdr rsp_hdr;
-  bool ok;
+  FAR struct cbor_nb_writer *nbw = streamer->writer;
+  FAR zcbor_state_t         *zsp = nbw->zs;
+  struct smp_hdr             rsp_hdr;
+  bool                       ok;
 
   ok = zcbor_map_start_encode(zsp, 2) && zcbor_tstr_put_lit(zsp, "rc")
        && zcbor_int32_put(zsp, status);
@@ -236,16 +232,10 @@ static int smp_build_err_rsp(FAR struct smp_streamer *streamer,
 static int smp_handle_single_payload(FAR struct smp_streamer *cbuf,
                                      FAR const struct smp_hdr *req_hdr)
 {
-  FAR const struct mgmt_group *group;
+  FAR const struct mgmt_group   *group;
   FAr const struct mgmt_handler *handler;
-  mgmt_handler_fn handler_fn;
-#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
-  struct mgmt_evt_op_cmd_arg cmd_recv;
-  enum mgmt_cb_return status;
-  uint16_t err_group;
-  int32_t err_rc;
-#endif
-  int rc;
+  mgmt_handler_fn                handler_fn;
+  int                            rc;
 
   group = mgmt_find_group(req_hdr->nh_group);
   if (group == NULL)
@@ -277,77 +267,26 @@ static int smp_handle_single_payload(FAR struct smp_streamer *cbuf,
     {
       bool ok;
 
-#if defined(CONFIG_MCUMGR_MGMT_CUSTOM_PAYLOAD)
-      if (!group->custom_payload)
+      ok = zcbor_map_start_encode(
+          cbuf->writer->zs, CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES);
+
+      MGMT_CTXT_SET_RC_RSN(cbuf, NULL);
+
+      if (!ok)
         {
-#endif
-          ok = zcbor_map_start_encode(
-              cbuf->writer->zs, CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES);
-
-          MGMT_CTXT_SET_RC_RSN(cbuf, NULL);
-
-          if (!ok)
-            {
-              return MGMT_ERR_EMSGSIZE;
-            }
-#if defined(CONFIG_MCUMGR_MGMT_CUSTOM_PAYLOAD)
+          return MGMT_ERR_EMSGSIZE;
         }
-#endif
-
-#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
-      cmd_recv.group = req_hdr->nh_group;
-      cmd_recv.id    = req_hdr->nh_id;
-      cmd_recv.op    = req_hdr->nh_op;
-
-      /* Send request to application to check if handler should run or not.
-       */
-
-      status = mgmt_callback_notify(MGMT_EVT_OP_CMD_RECV, &cmd_recv,
-                                    sizeof(cmd_recv), &err_rc, &err_group);
-
-      /* Skip running the command if a handler reported an error and return
-       * that instead.
-       */
-
-      if (status != MGMT_CB_OK)
-        {
-          if (status == MGMT_CB_ERROR_RC)
-            {
-              rc = err_rc;
-            }
-          else
-            {
-              ok = smp_add_cmd_err(cbuf->writer->zs, err_group,
-                                   (uint16_t)err_rc);
-
-              rc = (ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE);
-            }
-
-          goto end;
-        }
-#endif
 
       rc = handler_fn(cbuf);
 
-#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
-    end:
-#endif
-#if defined(CONFIG_MCUMGR_MGMT_CUSTOM_PAYLOAD)
-      if (!group->custom_payload)
-        {
-#endif
-          /* End response payload. */
+      /* End response payload. */
 
-          if (!zcbor_map_end_encode(
-                  cbuf->writer->zs,
-                  CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES)
-              && rc == 0)
-            {
-              rc = MGMT_ERR_EMSGSIZE;
-            }
-#if defined(CONFIG_MCUMGR_MGMT_CUSTOM_PAYLOAD)
+      if (!zcbor_map_end_encode(cbuf->writer->zs,
+                                CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES)
+          && rc == 0)
+        {
+          rc = MGMT_ERR_EMSGSIZE;
         }
-#endif
     }
   else
     {
@@ -383,9 +322,9 @@ static int smp_handle_single_req(FAR struct smp_streamer *streamer,
                                  FAR const char **rsn)
 {
   FAR struct cbor_nb_writer *nbw = streamer->writer;
-  FAR zcbor_state_t *zsp         = nbw->zs;
-  struct smp_hdr rsp_hdr;
-  int rc;
+  FAR zcbor_state_t         *zsp = nbw->zs;
+  struct smp_hdr             rsp_hdr;
+  int                        rc;
 
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
   nbw->error_group = 0;
@@ -527,21 +466,15 @@ static void smp_on_err(FAR struct smp_streamer *streamer,
 int smp_process_request_packet(FAR struct smp_streamer *streamer,
                                FAR void *vreq)
 {
-  FAR struct net_buf *req = vreq;
-  FAR const char *rsn     = NULL;
-  bool valid_hdr          = false;
-  bool handler_found      = false;
-  struct smp_hdr req_hdr;
-  FAR void *rsp;
-  int rc = 0;
+  FAR struct net_buf *req           = vreq;
+  FAR const char     *rsn           = NULL;
+  bool                valid_hdr     = false;
+  bool                handler_found = false;
+  struct smp_hdr      req_hdr;
+  FAR void           *rsp;
+  int                 rc            = 0;
 
   memset(req_hdr, 0, sizeof(struct smp_hdr));
-
-#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
-  struct mgmt_evt_op_cmd_arg cmd_done_arg;
-  int32_t err_rc;
-  uint16_t err_group;
-#endif
 
   rsp = NULL;
 
@@ -629,32 +562,11 @@ int smp_process_request_packet(FAR struct smp_streamer *streamer,
 
       net_buf_pull(req, req_hdr.nh_len);
 
-#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
-      cmd_done_arg.group = req_hdr.nh_group;
-      cmd_done_arg.id    = req_hdr.nh_id;
-      cmd_done_arg.err   = MGMT_ERR_EOK;
-
-      (void)mgmt_callback_notify(MGMT_EVT_OP_CMD_DONE, &cmd_done_arg,
-                                 sizeof(cmd_done_arg), &err_rc, &err_group);
-#endif
     }
 
   if (rc != 0 && valid_hdr)
     {
       smp_on_err(streamer, &req_hdr, req, rsp, rc, rsn);
-
-      if (handler_found)
-        {
-#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
-          cmd_done_arg.group = req_hdr.nh_group;
-          cmd_done_arg.id    = req_hdr.nh_id;
-          cmd_done_arg.err   = rc;
-
-          (void)mgmt_callback_notify(MGMT_EVT_OP_CMD_DONE, &cmd_done_arg,
-                                     sizeof(cmd_done_arg), &err_rc,
-                                     &err_group);
-#endif
-        }
 
       return rc;
     }
@@ -672,7 +584,7 @@ int smp_process_request_packet(FAR struct smp_streamer *streamer,
 bool smp_add_cmd_err(FAR zcbor_state_t *zse, uint16_t group, uint16_t ret)
 {
   FAR struct cbor_nb_writer *container;
-  bool ok = true;
+  bool                       ok = true;
 
   if (ret != 0)
     {
