@@ -23,295 +23,673 @@
  ****************************************************************************/
 
 #include <assert.h>
+#include <string.h>
 
-#include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
-#include <zephyr/mgmt/mcumgr/smp/smp.h>
-#include <zephyr/mgmt/mcumgr/transport/smp.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/byteorder.h>
 
-#include "smp_reassembly.h"
+#include <zcbor_common.h>
+#include <zcbor_decode.h>
+#include <zcbor_encode.h>
 
+#include <mgmt/mcumgr/mgmt/mgmt.h>
+#include <mgmt/mcumgr/smp/smp.h>
+#include <mgmt/mcumgr/smp/smp_client.h>
+#include <mgmt/mcumgr/transport/smp.h>
+
+#include "transport/smp_internal.h"
+
+#ifdef CONFIG_MCUMGR_MGMT_NOTIFICATION_HOOKS
+#include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
+#endif
+
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 /****************************************************************************
- * Private Data
- ****************************************************************************/
-
-static struct k_work_q smp_work_queue;
-
-static const struct k_work_queue_config smp_work_queue_config
-    = { .name = "mcumgr smp" };
-
-NET_BUF_POOL_DEFINE(pkt_pool, CONFIG_MCUMGR_TRANSPORT_NETBUF_COUNT,
-                    CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE,
-                    CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE, NULL);
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: smp_packet_alloc
- ****************************************************************************/
-
-FAR struct net_buf *smp_packet_alloc(void)
-{
-  return net_buf_alloc(&pkt_pool, K_NO_WAIT);
-}
-
-/****************************************************************************
- * Name: smp_process_packet
+ * Name:
  *
  * Description:
- *   Processes a single SMP packet and sends the corresponding response(s).
- *
- ****************************************************************************/
-
-static int smp_process_packet(FAR struct smp_transport *smpt, FAR struct net_buf *nb)
-{
-  struct cbor_nb_reader reader;
-  struct cbor_nb_writer writer;
-  struct smp_streamer   streamer;
-  int                   ret;
-
-  streamer.reader = &reader;
-  streamer.writer = &writer;
-  streamer.smpt   = smpt;
-
-  ret = smp_process_request_packet(&streamer, nb);
-  return ret;
-}
-
-/****************************************************************************
- * Name: smp_handle_regs
- *
- * Description:
- *   Processes all received SNP request packets.
- *
- ****************************************************************************/
-
-static void smp_handle_reqs(FAR struct k_work *work)
-{
-  FAR struct smp_transport *smpt;
-  FAR struct net_buf       *nb;
-
-  smpt = (FAR void *)work;
-
-  while ((nb = net_buf_get(&smpt->fifo, K_NO_WAIT)) != NULL)
-    {
-      smp_process_packet(smpt, nb);
-    }
-}
-
-/****************************************************************************
- * Name: smp_init
- ****************************************************************************/
-
-static int smp_init(void)
-{
-  k_work_queue_init(&smp_work_queue);
-
-  k_work_queue_start(&smp_work_queue, smp_work_queue_stack,
-                     K_THREAD_STACK_SIZEOF(smp_work_queue_stack),
-                     CONFIG_MCUMGR_TRANSPORT_WORKQUEUE_THREAD_PRIO,
-                     &smp_work_queue_config);
-
-  return 0;
-}
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: smp_packet_free
- ****************************************************************************/
-
-void smp_packet_free(FAR struct net_buf *nb)
-{
-  net_buf_unref(nb);
-}
-
-/****************************************************************************
- * Name: smp_alloc_rsp
- *
- * Description:
- *   Allocates a response buffer.
- *   If a source buf is provided, its user data is copied into the new
- *   buffer.
+ *   Translate SMP version 2 error code to legacy SMP version 1 MCUmgr
+ *   error code.
  *
  * Input Parameters:
- *   req -An optional source buffer to copy user data from.
- *   arg -The streamer providing the callback.
+ *   group - #mcumgr_group_t group ID
+ *   err   - Group-specific error code
  *
  * Return Value:
- *   Newly-allocated buffer on success
- *
- *   NULL on failure.
+ *   #mcumgr_err_t error code
  *
  ****************************************************************************/
 
-FAR void *smp_alloc_rsp(FAR const void *req, FAR void *arg)
+static int smp_translate_error_code(uint16_t group, uint16_t err)
 {
-  FAR const struct net_buf *req_nb;
-  FAR struct net_buf       *rsp_nb;
-  FAR struct smp_transport *smpt = arg;
+  smp_translate_error_fn translate_error_function = NULL;
 
-  req_nb = req;
+  translate_error_function = mgmt_find_error_translation_function(group);
 
-  rsp_nb = smp_packet_alloc();
-  if (rsp_nb == NULL)
+  if (translate_error_function == NULL)
     {
-      return NULL;
+      return MGMT_ERR_EUNKNOWN;
     }
 
-  if (smpt->functions.ud_copy)
+  return translate_error_function(err);
+}
+#endif
+
+/****************************************************************************
+ * Name: cbor_nb_reader_init
+ ****************************************************************************/
+
+static void cbor_nb_reader_init(FAR struct cbor_nb_reader *cnr,
+                                FAR struct net_buf *nb)
+{
+  cnr->nb = nb;
+  zcbor_new_decode_state(cnr->zs, ARRAY_SIZE(cnr->zs), nb->data, nb->len, 1,
+                         NULL, 0);
+}
+
+/****************************************************************************
+ * Name: cbor_nb_writer_init
+ ****************************************************************************/
+
+static void cbor_nb_writer_init(FAR struct cbor_nb_writer *cnw,
+                                FAR struct net_buf *nb)
+{
+  net_buf_reset(nb);
+  cnw->nb      = nb;
+  cnw->nb->len = sizeof(struct smp_hdr);
+  zcbor_new_encode_state(cnw->zs, ARRAY_SIZE(cnw->zs),
+                         nb->data + sizeof(struct smp_hdr),
+                         net_buf_tailroom(nb), 0);
+}
+
+/****************************************************************************
+ * Name: smp_rsp_op
+ *
+ * Description:
+ *   Converts a request opcode to its corresponding response opcode.
+ *
+ ****************************************************************************/
+
+static uint8_t smp_rsp_op(uint8_t req_op)
+{
+  if (req_op == MGMT_OP_READ)
     {
-      smpt->functions.ud_copy(rsp_nb, req_nb);
+      return MGMT_OP_READ_RSP;
     }
   else
     {
-      memcpy(net_buf_user_data(rsp_nb), net_buf_user_data((void *)req_nb),
-             req_nb->user_data_size);
+      return MGMT_OP_WRITE_RSP;
     }
-
-  return rsp_nb;
 }
 
 /****************************************************************************
- * Name: smp_free_buf
+ * Name: smp_make_rsp_hdr
  ****************************************************************************/
 
-void smp_free_buf(FAR void *buf, FAR void *arg)
+static void smp_make_rsp_hdr(FAR const struct smp_hdr *req_hdr,
+                             FAR struct smp_hdr *rsp_hdr, size_t len)
 {
-  FAR struct smp_transport *smpt = arg;
-
-  if (!buf)
-    {
-      return;
-    }
-
-  if (smpt->functions.ud_free)
-    {
-      smpt->functions.ud_free(net_buf_user_data((struct net_buf *)buf));
-    }
-
-  smp_packet_free(buf);
+#warning fixme
+  *rsp_hdr = (struct smp_hdr){
+    .nh_len   = sys_cpu_to_be16(len),
+    .nh_flags = 0,
+    .nh_op    = smp_rsp_op(req_hdr->nh_op),
+    .nh_group = sys_cpu_to_be16(req_hdr->nh_group),
+    .nh_seq   = req_hdr->nh_seq,
+    .nh_id    = req_hdr->nh_id,
+    .nh_version
+    = (req_hdr->nh_version > SMP_MCUMGR_VERSION_2 ? SMP_MCUMGR_VERSION_2
+                                                  : req_hdr->nh_version),
+  };
 }
 
 /****************************************************************************
- * Name: smp_transport_init
+ * Name: smp_write_hdr
  ****************************************************************************/
 
-int smp_transport_init(FAR struct smp_transport *smpt)
+static int smp_read_hdr(FAR const struct net_buf *nb,
+                        FAR struct smp_hdr *dst_hdr)
 {
-  DEBUGASSERT((smpt->functions.output != NULL));
-
-  if (smpt->functions.output == NULL)
+  if (nb->len < sizeof(*dst_hdr))
     {
-      return -EINVAL;
+      return MGMT_ERR_EINVAL;
     }
 
-#ifdef CONFIG_MCUMGR_TRANSPORT_REASSEMBLY
-  smp_reassembly_init(smpt);
-#endif
-
-  k_work_init(&smpt->work, smp_handle_reqs);
-  k_fifo_init(&smpt->fifo);
+  memcpy(dst_hdr, nb->data, sizeof(*dst_hdr));
+  dst_hdr->nh_len   = sys_be16_to_cpu(dst_hdr->nh_len);
+  dst_hdr->nh_group = sys_be16_to_cpu(dst_hdr->nh_group);
 
   return 0;
 }
 
 /****************************************************************************
- * Name: smp_rx_req
- *
- * Description:
- *   Enqueues an incoming SMP request packet for processing.
- *   This function always consumes the supplied net_buf.
- *
- * Input Parameters:
- *   smpt - The transport to use to send the corresponding response(s).
- *   nb   - The request packet to process.
- *
+ * Name: smp_write_hdr
  ****************************************************************************/
 
-void smp_rx_req(FAR struct smp_transport *smpt, FAR struct net_buf *nb)
+static inline int smp_write_hdr(FAR struct smp_streamer *streamer,
+                                FAR const struct smp_hdr *src_hdr)
 {
-  net_buf_put(&smpt->fifo, nb);
-  k_work_submit_to_queue(&smp_work_queue, &smpt->work);
+  memcpy(streamer->writer->nb->data, src_hdr, sizeof(*src_hdr));
+  return 0;
 }
 
 /****************************************************************************
- * Name: smp_rx_remove_invalid
+ * Name: smp_build_err_rsp
  ****************************************************************************/
 
-void smp_rx_remove_invalid(FAR struct smp_transport *zst, FAR void *arg)
+static int smp_build_err_rsp(FAR struct smp_streamer *streamer,
+                             FAR const struct smp_hdr *req_hdr, int status,
+                             FAR const char *rc_rsn)
 {
-  FAR struct net_buf *nb;
-  struct k_fifo temp_fifo;
+  struct cbor_nb_writer *nbw = streamer->writer;
+  zcbor_state_t *zsp         = nbw->zs;
+  struct smp_hdr rsp_hdr;
+  bool ok;
 
-  if (zst->functions.query_valid_check == NULL)
+  ok = zcbor_map_start_encode(zsp, 2) && zcbor_tstr_put_lit(zsp, "rc")
+       && zcbor_int32_put(zsp, status);
+
+#ifdef CONFIG_MCUMGR_SMP_VERBOSE_ERR_RESPONSE
+  if (ok && rc_rsn != NULL)
     {
-      /* No check check function registered, abort check */
+      ok = zcbor_tstr_put_lit(zsp, "rsn")
+           && zcbor_tstr_put_term(zsp, rc_rsn, CONFIG_ZCBOR_MAX_STR_LEN);
+    }
+#else
+  ARG_UNUSED(rc_rsn);
+#endif
+  ok &= zcbor_map_end_encode(zsp, 2);
 
-      return;
+  if (!ok)
+    {
+      return MGMT_ERR_EMSGSIZE;
     }
 
-  /* Cancel current work-queue if ongoing */
-  if (k_work_busy_get(&zst->work) & (K_WORK_RUNNING | K_WORK_QUEUED))
+  smp_make_rsp_hdr(req_hdr, &rsp_hdr,
+                   zsp->payload_mut - nbw->nb->data - MGMT_HDR_SIZE);
+  nbw->nb->len = zsp->payload_mut - nbw->nb->data;
+  smp_write_hdr(streamer, &rsp_hdr);
+
+  return 0;
+}
+
+/****************************************************************************
+ * Name: smp_handle_single_payload
+ *
+ * Description:
+ *   Processes a single SMP request and generates a response payload (i.e.,
+ *   everything after the management header).  On success, the response
+ *   payload is written to the supplied cbuf but not transmitted.
+ *   On failure, no error response gets written; the caller is expected to
+ *   build an error response from the return code.
+ *
+ * Input Parameters:
+ *   cbuf    - A cbuf containing the request and response buffer.
+ *   req_hdr - The management header belonging to the incoming request
+ *(host-byte order).
+ *
+ * Return Value:
+ *   A MGMT_ERR_[...] error code.
+ *
+ ****************************************************************************/
+
+static int smp_handle_single_payload(FAR struct smp_streamer *cbuf,
+                                     FAR const struct smp_hdr *req_hdr)
+{
+  FAR const struct mgmt_group *group;
+  FAr const struct mgmt_handler *handler;
+  mgmt_handler_fn handler_fn;
+#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
+  struct mgmt_evt_op_cmd_arg cmd_recv;
+  enum mgmt_cb_return status;
+  uint16_t err_group;
+  int32_t err_rc;
+#endif
+  int rc;
+
+  group = mgmt_find_group(req_hdr->nh_group);
+  if (group == NULL)
     {
-      k_work_cancel(&zst->work);
+      return MGMT_ERR_ENOTSUP;
     }
 
-  /* Run callback function and remove all buffers that are no longer needed.
-   * Store those that are in a temporary FIFO
+  handler = mgmt_get_handler(group, req_hdr->nh_id);
+  if (handler == NULL)
+    {
+      return MGMT_ERR_ENOTSUP;
+    }
+
+  switch (req_hdr->nh_op)
+    {
+      case MGMT_OP_READ:
+        handler_fn = handler->mh_read;
+        break;
+
+      case MGMT_OP_WRITE:
+        handler_fn = handler->mh_write;
+        break;
+
+      default:
+        return MGMT_ERR_EINVAL;
+    }
+
+  if (handler_fn)
+    {
+      bool ok;
+
+#if defined(CONFIG_MCUMGR_MGMT_CUSTOM_PAYLOAD)
+      if (!group->custom_payload)
+        {
+#endif
+          ok = zcbor_map_start_encode(
+              cbuf->writer->zs, CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES);
+
+          MGMT_CTXT_SET_RC_RSN(cbuf, NULL);
+
+          if (!ok)
+            {
+              return MGMT_ERR_EMSGSIZE;
+            }
+#if defined(CONFIG_MCUMGR_MGMT_CUSTOM_PAYLOAD)
+        }
+#endif
+
+#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
+      cmd_recv.group = req_hdr->nh_group;
+      cmd_recv.id    = req_hdr->nh_id;
+      cmd_recv.op    = req_hdr->nh_op;
+
+      /* Send request to application to check if handler should run or not.
+       */
+
+      status = mgmt_callback_notify(MGMT_EVT_OP_CMD_RECV, &cmd_recv,
+                                    sizeof(cmd_recv), &err_rc, &err_group);
+
+      /* Skip running the command if a handler reported an error and return
+       * that instead.
+       */
+
+      if (status != MGMT_CB_OK)
+        {
+          if (status == MGMT_CB_ERROR_RC)
+            {
+              rc = err_rc;
+            }
+          else
+            {
+              ok = smp_add_cmd_err(cbuf->writer->zs, err_group,
+                                   (uint16_t)err_rc);
+
+              rc = (ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE);
+            }
+
+          goto end;
+        }
+#endif
+
+      rc = handler_fn(cbuf);
+
+#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
+    end:
+#endif
+#if defined(CONFIG_MCUMGR_MGMT_CUSTOM_PAYLOAD)
+      if (!group->custom_payload)
+        {
+#endif
+          /* End response payload. */
+
+          if (!zcbor_map_end_encode(
+                  cbuf->writer->zs,
+                  CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES)
+              && rc == 0)
+            {
+              rc = MGMT_ERR_EMSGSIZE;
+            }
+#if defined(CONFIG_MCUMGR_MGMT_CUSTOM_PAYLOAD)
+        }
+#endif
+    }
+  else
+    {
+      rc = MGMT_ERR_ENOTSUP;
+    }
+
+  return rc;
+}
+
+/****************************************************************************
+ * Name: smp_handle_single_req
+ *
+ * Description:
+ *   Processes a single SMP request and generates a complete response (i.e.,
+ *   header and payload).  On success, the response is written using the
+ *   supplied streamer but not transmitted.  On failure, no error response
+ *   gets written;
+ *   the caller is expected to build an error response from the return code.
+ *
+ * Input Parameters:
+ *   streamer - The SMP streamer to use for reading the request and writing
+ *              the response.
+ *   req_hdr  - The management header belonging to the incoming request
+ *              (host-byte order).
+ *
+ * Return Value:
+ *   A MGMT_ERR_[...] error code.
+ *
+ ****************************************************************************/
+
+static int smp_handle_single_req(FAR struct smp_streamer *streamer,
+                                 FAR const struct smp_hdr *req_hdr,
+                                 FAR const char **rsn)
+{
+  FAR struct cbor_nb_writer *nbw = streamer->writer;
+  FAR zcbor_state_t *zsp         = nbw->zs;
+  struct smp_hdr rsp_hdr;
+  int rc;
+
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+  nbw->error_group = 0;
+  nbw->error_ret   = 0;
+#else
+  if (req_hdr->nh_version == SMP_MCUMGR_VERSION_1)
+    {
+      /* Support for the original version is excluded in this build */
+
+      return MGMT_ERR_UNSUPPORTED_TOO_OLD;
+    }
+#endif
+
+  /* We do not currently support future versions of the protocol */
+
+  if (req_hdr->nh_version > SMP_MCUMGR_VERSION_2)
+    p
+    {
+      return MGMT_ERR_UNSUPPORTED_TOO_NEW;
+    }
+
+  /* Process the request and write the response payload. */
+
+  rc = smp_handle_single_payload(streamer, req_hdr);
+  if (rc != 0)
+    {
+      *rsn = MGMT_CTXT_RC_RSN(streamer);
+      return rc;
+    }
+
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+  /* If using the legacy protocol, translate the error code to a return code
    */
 
-  k_fifo_init(&temp_fifo);
-
-  while ((nb = net_buf_get(&zst->fifo, K_NO_WAIT)) != NULL)
+  if (nbw->error_ret != 0 && req_hdr->nh_version == 0)
     {
-      if (!zst->functions.query_valid_check(nb, arg))
+      rc   = smp_translate_error_code(nbw->error_group, nbw->error_ret);
+      *rsn = MGMT_CTXT_RC_RSN(streamer);
+      return rc;
+    }
+#endif
+
+  smp_make_rsp_hdr(req_hdr, &rsp_hdr,
+                   zsp->payload_mut - nbw->nb->data - MGMT_HDR_SIZE);
+  nbw->nb->len = zsp->payload_mut - nbw->nb->data;
+  smp_write_hdr(streamer, &rsp_hdr);
+
+  return 0;
+}
+
+/****************************************************************************
+ * Name: smp_on_err
+ *
+ * Description:
+ *   Attempts to transmit an SMP error response.  This function consumes
+ *   both supplied buffers.
+ *
+ * Input Parameters:
+ *   streamer - The SMP streamer for building and transmitting the
+ *              response.
+ *   eq_hdr   - The header of the request which elicited the error.
+ *   req      - The buffer holding the request.
+ *   rsp      - The buffer holding the response, or NULL if none was
+ *              allocated.
+ *   status   - The status to indicate in the error response.
+ *   rsn      - The text explanation to @status encoded as "rsn" into
+ *              CBOR response.
+ *
+ ****************************************************************************/
+
+static void smp_on_err(FAR struct smp_streamer *streamer,
+                       FAR const struct smp_hdr *req_hdr, FAR void *req,
+                       FAR void *rsp, int status, FAR const char *rsn)
+{
+  int rc;
+
+  /* Prefer the response buffer for holding the error response.  If no
+   * response buffer was allocated, use the request buffer instead.
+   */
+
+  if (rsp == NULL)
+    {
+      rsp = req;
+      req = NULL;
+    }
+
+  /* Clear the partial response from the buffer, if any. */
+
+  cbor_nb_writer_init(streamer->writer, rsp);
+
+  /* Build and transmit the error response. */
+
+  rc = smp_build_err_rsp(streamer, req_hdr, status, rsn);
+  if (rc == 0)
+    {
+      streamer->smpt->functions.output(rsp);
+      rsp = NULL;
+    }
+
+  /* Free any extra buffers. */
+
+  smp_free_buf(req, streamer->smpt);
+  smp_free_buf(rsp, streamer->smpt);
+}
+
+/****************************************************************************
+ * Public Function
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: smp_add_cmd_err
+ *
+ * Description:
+ *   Processes all SMP requests in an incoming packet.
+ *   Requests are processed sequentially from the start of the packet to
+ *   the end.  Each response is sent individually in its own packet.
+ *   If a request elicits an error response, processing of the packet
+ *   is aborted.  This function consumes the supplied request buffer
+ *   regardless of the outcome. The function will return MGMT_ERR_EOK (0)
+ *   when given an empty input stream, and will also release the buffer from
+ *   the stream; it does not return MTMT_ERR_ECORRUPT, or any other MGMT
+ *   error, because there was no error while processing of the input stream,
+ *   it is callers fault that an empty stream has been passed to the
+ *   function.
+ *
+ * Input Parameters:
+ *   streamer - The streamer to use for reading, writing, and transmitting.
+ *   req      - A buffer containing the request packet.
+ *
+ * Return Value:
+ *   0 on success or when input stream is empty;
+ *
+ *   MGMT_ERR_ECORRUPT if buffer starts with non SMP data header or there
+ *   is not enough bytes to process header, or other MGMT_ERR_[...] code on
+ *   failure.
+ *
+ ****************************************************************************/
+
+int smp_process_request_packet(FAR struct smp_streamer *streamer,
+                               FAR void *vreq)
+{
+  FAR struct net_buf *req = vreq;
+  FAR const char *rsn     = NULL;
+  bool valid_hdr          = false;
+  bool handler_found      = false;
+  struct smp_hdr req_hdr;
+  FAR void *rsp;
+  int rc = 0;
+
+  memset(req_hdr, 0, sizeof(struct smp_hdr));
+
+#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
+  struct mgmt_evt_op_cmd_arg cmd_done_arg;
+  int32_t err_rc;
+  uint16_t err_group;
+#endif
+
+  rsp = NULL;
+
+  while (req->len > 0)
+    {
+      handler_found = false;
+      valid_hdr     = false;
+
+      /* Read the management header and strip it from the request. */
+
+      rc = smp_read_hdr(req, &req_hdr);
+      if (rc != 0)
         {
-          smp_free_buf(nb, zst);
+          rc = MGMT_ERR_ECORRUPT;
+          break;
+        }
+
+      valid_hdr = true;
+
+      /* Skip the smp_hdr */
+
+      net_buf_pull(req, sizeof(struct smp_hdr));
+
+      /* Does buffer contain whole message? */
+
+      if (req->len < req_hdr.nh_len)
+        {
+          rc = MGMT_ERR_ECORRUPT;
+          break;
+        }
+
+      if (req_hdr.nh_op == MGMT_OP_READ || req_hdr.nh_op == MGMT_OP_WRITE)
+        {
+          rsp = smp_alloc_rsp(req, streamer->smpt);
+          if (rsp == NULL)
+            {
+              rc = MGMT_ERR_ENOMEM;
+              break;
+            }
+
+          cbor_nb_reader_init(streamer->reader, req);
+          cbor_nb_writer_init(streamer->writer, rsp);
+
+          /* Process the request payload and build the response. */
+
+          rc            = smp_handle_single_req(streamer, &req_hdr, &rsn);
+          handler_found = (rc != MGMT_ERR_ENOTSUP);
+          if (rc != 0)
+            {
+              break;
+            }
+
+          /* Send the response. */
+
+          rc  = streamer->smpt->functions.output(rsp);
+          rsp = NULL;
+        }
+      else if (IS_ENABLED(CONFIG_SMP_CLIENT)
+               && (req_hdr.nh_op == MGMT_OP_READ_RSP
+                   || req_hdr.nh_op == MGMT_OP_WRITE_RSP))
+        {
+          rc = smp_client_single_response(req, &req_hdr);
+
+          if (rc == MGMT_ERR_EOK)
+            {
+              handler_found = true;
+            }
+          else
+            {
+              /* Server shuold not send error response for response */
+              valid_hdr = false;
+            }
         }
       else
         {
-          net_buf_put(&temp_fifo, nb);
+          rc = MGMT_ERR_ENOTSUP;
         }
+
+      if (rc != 0)
+        {
+          break;
+        }
+
+      /* Trim processed request to free up space for subsequent responses. */
+
+      net_buf_pull(req, req_hdr.nh_len);
+
+#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
+      cmd_done_arg.group = req_hdr.nh_group;
+      cmd_done_arg.id    = req_hdr.nh_id;
+      cmd_done_arg.err   = MGMT_ERR_EOK;
+
+      (void)mgmt_callback_notify(MGMT_EVT_OP_CMD_DONE, &cmd_done_arg,
+                                 sizeof(cmd_done_arg), &err_rc, &err_group);
+#endif
     }
 
-  /* Re-insert the remaining queued operations into the original FIFO */
-
-  while ((nb = net_buf_get(&temp_fifo, K_NO_WAIT)) != NULL)
+  if (rc != 0 && valid_hdr)
     {
-      net_buf_put(&zst->fifo, nb);
+      smp_on_err(streamer, &req_hdr, req, rsp, rc, rsn);
+
+      if (handler_found)
+        {
+#if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
+          cmd_done_arg.group = req_hdr.nh_group;
+          cmd_done_arg.id    = req_hdr.nh_id;
+          cmd_done_arg.err   = rc;
+
+          (void)mgmt_callback_notify(MGMT_EVT_OP_CMD_DONE, &cmd_done_arg,
+                                     sizeof(cmd_done_arg), &err_rc,
+                                     &err_group);
+#endif
+        }
+
+      return rc;
     }
 
-  /* If at least one entry remains, queue the workqueue for running */
+  smp_free_buf(req, streamer->smpt);
+  smp_free_buf(rsp, streamer->smpt);
 
-  if (!k_fifo_is_empty(&zst->fifo))
-    {
-      k_work_submit_to_queue(&smp_work_queue, &zst->work);
-    }
+  return rc;
 }
 
 /****************************************************************************
- * Name: smp_rx_clear
+ * Name: smp_add_cmd_err
  ****************************************************************************/
 
-void smp_rx_clear(FAR struct smp_transport *zst)
+bool smp_add_cmd_err(FAR zcbor_state_t *zse, uint16_t group, uint16_t ret)
 {
-  FAR struct net_buf *nb;
+  FAR struct cbor_nb_writer *container;
+  bool ok = true;
 
-  /* Cancel current work-queue if ongoing */
-
-  if (k_work_busy_get(&zst->work) & (K_WORK_RUNNING | K_WORK_QUEUED))
+  if (ret != 0)
     {
-      k_work_cancel(&zst->work);
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
+      container = CONTAINER_OF(zse, struct cbor_nb_writer, zs[0]);
+
+      container->error_group = group;
+      container->error_ret   = ret;
+#endif
+
+      ok = zcbor_tstr_put_lit(zse, "err") && zcbor_map_start_encode(zse, 2)
+           && zcbor_tstr_put_lit(zse, "group")
+           && zcbor_uint32_put(zse, (uint32_t)group)
+           && zcbor_tstr_put_lit(zse, "rc")
+           && zcbor_uint32_put(zse, (uint32_t)ret)
+           && zcbor_map_end_encode(zse, 2);
     }
 
-  /* Drain the FIFO of all entries without re-adding any */
-
-  while ((nb = net_buf_get(&zst->fifo, K_NO_WAIT)) != NULL)
-    {
-      smp_free_buf(nb, zst);
-    }
+  return ok;
 }
