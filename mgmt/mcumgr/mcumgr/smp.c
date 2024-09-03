@@ -18,6 +18,10 @@
  *
  ****************************************************************************/
 
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
 #include <assert.h>
 
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
@@ -25,6 +29,10 @@
 #include <zephyr/mgmt/mcumgr/transport/smp.h>
 
 #include "smp_reassembly.h"
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
 
 static struct k_work_q smp_work_queue;
 
@@ -212,7 +220,7 @@ int smp_transport_init(FAR struct smp_transport *smpt)
 }
 
 /****************************************************************************
- * Name: smp_rx_remove_invalid
+ * Name: smp_rx_req
  *
  * Description:
  *   Enqueues an incoming SMP request packet for processing.
