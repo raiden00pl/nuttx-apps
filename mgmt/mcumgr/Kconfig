@@ -12,9 +12,25 @@ menuconfig MGMT_MCUMGR
 
 if MGMT_MCUMGR
 
-bool MGMT_MCUMGR_DAEMON
-	bool "MCUmgr daemon support"
+config MGMT_MCUMGR_DAEMON
+	tristate "MCUmgr daemon support"
 	default n
+
+if MGMT_MCUMGR_DAEMON
+
+config MGMT_MCUMGR_DAEMON_PROGNAME
+	string "MCUmgr daemon name"
+	default "mcumgr"
+
+config MGMT_MCUMGR_DAEMON_PRIORITY
+	int "MCUmgr daemon task priority"
+	default 100
+
+config MGMT_MCUMGR_DAEMON_STACKSIZE
+	int "MCUmgr daemon stack size"
+	default DEFAULT_TASK_STACKSIZE
+
+endif # MGMT_MCUMGR_DAEMON
 
 config MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 	bool "Support original protocol"

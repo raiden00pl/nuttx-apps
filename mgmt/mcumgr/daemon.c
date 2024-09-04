@@ -1,5 +1,5 @@
 /****************************************************************************
- * apps/mgmt/mcumgr/serial.c
+ * apps/mgmt/mcumgr/daemon.c
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -32,6 +32,35 @@
 
 int main(int argc, FAR char *argv[])
 {
-  printf("Hello, World!!\n");
+  int ret;
+#warning move to common logic ?
+  /* Initialize SMP */
+
+  ret = smp_init();
+  if (ret < 0)
+    {
+      printf("smp_init failed: %d\n", ret);
+      goto errout;
+    }
+
+  /*  */
+
+  ret = os_mgmt_register_group();
+  ret = shell_mgmt_register_group();
+  ret = enum_mgmt_register_group();
+
+  /* Initialize handlers */
+
+  ret = mcumgr_handlers_init()
+
+
+
+  /*  */
+
+  ret = smp_uart_init();
+  /* ret = smp_bt_init(); */
+  /* ret = smp_shell_init(); */
+
+errout:
   return 0;
 }

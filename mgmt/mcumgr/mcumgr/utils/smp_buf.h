@@ -61,10 +61,10 @@ int smp_buf_tailroom(FAR struct smp_buf *nb);
 FAR void *smp_buf_pull(FAR struct smp_buf *buf, size_t len);
 
 FAR struct smp_buf *smp_buf_alloc(FAR struct smp_buf_pool *pool,
-                                  k_timeout_t timeout)
+                                  unsigned int timeout)
 
 FAR struct smp_buf *smp_buf_get(FAR struct k_fifo *fifo,
-                                k_timeout_t timeout, FAR const char *func,
+                                unsigned int timeout, FAR const char *func,
                                 int line);
 
 void smp_buf_unref(FAR struct smp_buf *buf);

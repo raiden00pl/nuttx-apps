@@ -106,10 +106,7 @@ FAR void *smp_buf_pull(FAR struct smp_buf *buf, size_t len)
  *
  * Input Parameters:
  *   pool    - Which pool to allocate the buffer from.
- *   timeout - Affects the action taken should the pool be empty.
- *             If K_NO_WAIT, then return immediately. If K_FOREVER, then
- *             wait as long as necessary. Otherwise, wait until the specified
- *             timeout.
+ *   timeout - Timeout value in milliseconds.
  *
  * Return Value:
  *   New buffer or NULL if out of buffers.
@@ -117,7 +114,7 @@ FAR void *smp_buf_pull(FAR struct smp_buf *buf, size_t len)
  ****************************************************************************/
 
 FAR struct smp_buf *smp_buf_alloc(FAR struct smp_buf_pool *pool,
-                                  k_timeout_t timeout)
+                                  unsigned int timeout)
 {
 
 }
@@ -130,9 +127,7 @@ FAR struct smp_buf *smp_buf_alloc(FAR struct smp_buf_pool *pool,
  *
  * Input Parameters:
  *   fifo    - Which FIFO to take the buffer from.
- *   timeout - Affects the action taken should the FIFO be empty.
- *             If K_NO_WAIT, then return immediately. If K_FOREVER, then wait as
- *             long as necessary. Otherwise, wait until the specified timeout.
+ *   timeout - Timeout value in milliseconds.
  *
  * Return Value:
  *   New buffer or NULL if the FIFO is empty.
@@ -140,7 +135,7 @@ FAR struct smp_buf *smp_buf_alloc(FAR struct smp_buf_pool *pool,
  ****************************************************************************/
 
 FAR struct smp_buf *smp_buf_get(FAR struct k_fifo *fifo,
-                                k_timeout_t timeout, FAR const char *func,
+                                unsigned int timeout, FAR const char *func,
                                 int line)
 {
 

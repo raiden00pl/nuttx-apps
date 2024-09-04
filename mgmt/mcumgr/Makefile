@@ -22,16 +22,24 @@ include $(APPDIR)/Make.defs
 
 # mcumgr sources
 
-# CSRCS += mcumgr/mgmt/mgmt.c
-# CSRCS += mcumgr/smp/smp.c
-# CSRCS += mcumgr/smp/smp_err.c
+CSRCS += mcumgr/mgmt/mgmt.c
+CSRCS += mcumgr/smp/smp.c
+CSRCS += mcumgr/smp/smp_err.c
+CSRCS += mcumgr/util/smp_buf.c
 CSRCS += mcumgr/util/zcbor_bulk.c
 
 # mcumgr includes
 
-MCUMGR_ALL_INC = mcumgr/include
+MCUMGR_ALL_INC = mcumgr
 
 CFLAGS += $(addprefix ${INCDIR_PREFIX}, $(MCUMGR_ALL_INC))
 CXXFLAGS += $(addprefix ${INCDIR_PREFIX}, $(MCUGMR_ALL_INC))
+
+ifeq ($(CONFIG_MGMT_MCUMGR_DAEMON),y)
+PROGNAME  = $(MGMT_MCUMGR_DAEMON_PROGNAME)
+PRIORITY  = $(MGMT_MCUMGR_DAEMON_PRIORITY)
+STACKSIZE = $(MGMT_MCUMGR_DAEMON_STACKSIZE)
+MODULE    = $(CONFIG_MGMT_MCUMGR_DAEMON)
+endif
 
 include $(APPDIR)/Application.mk

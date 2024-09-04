@@ -41,28 +41,6 @@ static sys_slist_t mgmt_group_list = SYS_SLIST_STATIC_INIT(&mgmt_group_list);
  ****************************************************************************/
 
 /****************************************************************************
- * Name: mcumgr_handlers_init
- *
- * Description:
- *   Processes all registered MCUmgr handlers at start up and registers them
- *
- ****************************************************************************/
-
-static int mcumgr_handlers_init(void)
-{
-
-  STRUCT_SECTION_FOREACH(mcumgr_handler, handler)
-  {
-    if (handler->init)
-      {
-        handler->init();
-      }
-  }
-
-  return 0;
-}
-
-/****************************************************************************
  * Public Function
  ****************************************************************************/
 
@@ -138,4 +116,26 @@ FAR const struct mgmt_handler *mgmt_find_handler(uint16_t group_id,
 void mgmt_register_group(FAR struct mgmt_group *group)
 {
   sys_slist_append(&mgmt_group_list, &group->node);
+}
+
+/****************************************************************************
+ * Name: mcumgr_handlers_init
+ *
+ * Description:
+ *   Processes all registered MCUmgr handlers at start up and registers them
+ *
+ ****************************************************************************/
+
+int mcumgr_handlers_init(void)
+{
+
+  STRUCT_SECTION_FOREACH(mcumgr_handler, handler)
+    {
+      if (handler->init)
+        {
+          handler->init();
+        }
+    }
+
+  return 0;
 }

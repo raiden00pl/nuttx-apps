@@ -300,12 +300,12 @@ void smp_rx_clear(FAR struct smp_transport *zst)
  * Name: smp_init
  ****************************************************************************/
 
-int smp_init(void)
-{
-  /* Initialize SMP buffers */
 #define CONFIG_MGMT_MCUMGR_SMP_BUF_COUNT 10
 #define CONFIG_MGMT_MCUMGR_SMP_BUF_SIZE  255
 #define CONFIG_MGMT_MCUMGR_SMP_BUF_USIZE 32
+int smp_init(void)
+{
+  /* Initialize SMP buffers */
   ret = smp_buf_init(CONFIG_MGMT_MCUMGR_SMP_BUF_COUNT,
                CONFIG_MGMT_MCUMGR_SMP_BUF_SIZE,
                CONFIG_MGMT_MCUMGR_SMP_BUF_USIZE);

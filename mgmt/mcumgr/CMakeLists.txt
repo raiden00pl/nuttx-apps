@@ -21,10 +21,33 @@
 if(CONFIG_MGMT_MCUMGR)
   nuttx_add_library(mcumgr)
 
-  # mcumgr sources
-  set(SRCS )
+  if(CONFIG_MGMT_MCUMGR_DAEMON)
+    nuttx_add_application(
+      NAME
+      ${MGMT_MCUMGR_DAEMON_PROGNAME}
+      SRCS
+      hello_main.c
+      STACKSIZE
+      ${MGMT_MCUMGR_DAEMON_STACKSIZE}
+      PRIORITY
+      ${MGMT_MCUMGR_DAEMON_PRIORITY}
+      DEPENDS
+      mcumgr)
+  endif()
 
-  target_include_directories(mcumgr PRIVATE include)
+  set(SRCS
+    mcumgr/mgmt/mgmt.c
+    mcumgr/smp/smp.c
+    mcumgr/smp/smp_err.c
+    mcumgr/util/smp_buf.c
+    mcumgr/util/zcbor_bulk.c)
 
+
+  # if(xxx)
+  #   list(APPEND CSRCS )
+  # endif()
+
+
+  target_include_directories(mcumgr PRIVATE mcumgr)
   target_sources(mcumgr PRIVATE ${SRCS})
 endif()
