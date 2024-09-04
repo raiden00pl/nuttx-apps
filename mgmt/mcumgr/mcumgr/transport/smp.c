@@ -39,10 +39,6 @@ static struct k_work_q smp_work_queue;
 static const struct k_work_queue_config smp_work_queue_config
     = { .name = "mcumgr smp" };
 
-NET_BUF_POOL_DEFINE(pkt_pool, CONFIG_MCUMGR_TRANSPORT_NETBUF_COUNT,
-                    CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE,
-                    CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE, NULL);
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -51,9 +47,9 @@ NET_BUF_POOL_DEFINE(pkt_pool, CONFIG_MCUMGR_TRANSPORT_NETBUF_COUNT,
  * Name: smp_packet_alloc
  ****************************************************************************/
 
-FAR struct net_buf *smp_packet_alloc(void)
+FAR struct smp_buf *smp_packet_alloc(void)
 {
-  return net_buf_alloc(&pkt_pool, K_NO_WAIT);
+  return smp_buf_alloc(&pkt_pool, K_NO_WAIT);
 }
 
 /****************************************************************************
@@ -64,7 +60,7 @@ FAR struct net_buf *smp_packet_alloc(void)
  *
  ****************************************************************************/
 
-static int smp_process_packet(FAR struct smp_transport *smpt, FAR struct net_buf *nb)
+static int smp_process_packet(FAR struct smp_transport *smpt, FAR struct smp_buf *nb)
 {
   struct cbor_nb_reader reader;
   struct cbor_nb_writer writer;
@@ -90,30 +86,14 @@ static int smp_process_packet(FAR struct smp_transport *smpt, FAR struct net_buf
 static void smp_handle_reqs(FAR struct k_work *work)
 {
   FAR struct smp_transport *smpt;
-  FAR struct net_buf       *nb;
+  FAR struct smp_buf       *nb;
 
   smpt = (FAR void *)work;
 
-  while ((nb = net_buf_get(&smpt->fifo, K_NO_WAIT)) != NULL)
+  while ((nb = smp_buf_get(&smpt->fifo, K_NO_WAIT)) != NULL)
     {
       smp_process_packet(smpt, nb);
     }
-}
-
-/****************************************************************************
- * Name: smp_init
- ****************************************************************************/
-
-static int smp_init(void)
-{
-  k_work_queue_init(&smp_work_queue);
-
-  k_work_queue_start(&smp_work_queue, smp_work_queue_stack,
-                     K_THREAD_STACK_SIZEOF(smp_work_queue_stack),
-                     CONFIG_MCUMGR_TRANSPORT_WORKQUEUE_THREAD_PRIO,
-                     &smp_work_queue_config);
-
-  return 0;
 }
 
 /****************************************************************************
@@ -124,9 +104,9 @@ static int smp_init(void)
  * Name: smp_packet_free
  ****************************************************************************/
 
-void smp_packet_free(FAR struct net_buf *nb)
+void smp_packet_free(FAR struct smp_buf *nb)
 {
-  net_buf_unref(nb);
+  smp_buf_unref(nb);
 }
 
 /****************************************************************************
@@ -150,8 +130,8 @@ void smp_packet_free(FAR struct net_buf *nb)
 
 FAR void *smp_alloc_rsp(FAR const void *req, FAR void *arg)
 {
-  FAR const struct net_buf *req_nb;
-  FAR struct net_buf       *rsp_nb;
+  FAR const struct smp_buf *req_nb;
+  FAR struct smp_buf       *rsp_nb;
   FAR struct smp_transport *smpt = arg;
 
   req_nb = req;
@@ -168,7 +148,7 @@ FAR void *smp_alloc_rsp(FAR const void *req, FAR void *arg)
     }
   else
     {
-      memcpy(net_buf_user_data(rsp_nb), net_buf_user_data((void *)req_nb),
+      memcpy(smp_buf_user_data(rsp_nb), smp_buf_user_data((void *)req_nb),
              req_nb->user_data_size);
     }
 
@@ -190,7 +170,7 @@ void smp_free_buf(FAR void *buf, FAR void *arg)
 
   if (smpt->functions.ud_free)
     {
-      smpt->functions.ud_free(net_buf_user_data((struct net_buf *)buf));
+      smpt->functions.ud_free(smp_buf_user_data((struct smp_buf *)buf));
     }
 
   smp_packet_free(buf);
@@ -224,7 +204,7 @@ int smp_transport_init(FAR struct smp_transport *smpt)
  *
  * Description:
  *   Enqueues an incoming SMP request packet for processing.
- *   This function always consumes the supplied net_buf.
+ *   This function always consumes the supplied smp_buf.
  *
  * Input Parameters:
  *   smpt - The transport to use to send the corresponding response(s).
@@ -232,9 +212,9 @@ int smp_transport_init(FAR struct smp_transport *smpt)
  *
  ****************************************************************************/
 
-void smp_rx_req(FAR struct smp_transport *smpt, FAR struct net_buf *nb)
+void smp_rx_req(FAR struct smp_transport *smpt, FAR struct smp_buf *nb)
 {
-  net_buf_put(&smpt->fifo, nb);
+  smp_buf_put(&smpt->fifo, nb);
   k_work_submit_to_queue(&smp_work_queue, &smpt->work);
 }
 
@@ -244,7 +224,7 @@ void smp_rx_req(FAR struct smp_transport *smpt, FAR struct net_buf *nb)
 
 void smp_rx_remove_invalid(FAR struct smp_transport *zst, FAR void *arg)
 {
-  FAR struct net_buf *nb;
+  FAR struct smp_buf *nb;
   struct k_fifo temp_fifo;
 
   if (zst->functions.query_valid_check == NULL)
@@ -266,7 +246,7 @@ void smp_rx_remove_invalid(FAR struct smp_transport *zst, FAR void *arg)
 
   k_fifo_init(&temp_fifo);
 
-  while ((nb = net_buf_get(&zst->fifo, K_NO_WAIT)) != NULL)
+  while ((nb = smp_buf_get(&zst->fifo, K_NO_WAIT)) != NULL)
     {
       if (!zst->functions.query_valid_check(nb, arg))
         {
@@ -274,15 +254,15 @@ void smp_rx_remove_invalid(FAR struct smp_transport *zst, FAR void *arg)
         }
       else
         {
-          net_buf_put(&temp_fifo, nb);
+          smp_buf_put(&temp_fifo, nb);
         }
     }
 
   /* Re-insert the remaining queued operations into the original FIFO */
 
-  while ((nb = net_buf_get(&temp_fifo, K_NO_WAIT)) != NULL)
+  while ((nb = smp_buf_get(&temp_fifo, K_NO_WAIT)) != NULL)
     {
-      net_buf_put(&zst->fifo, nb);
+      smp_buf_put(&zst->fifo, nb);
     }
 
   /* If at least one entry remains, queue the workqueue for running */
@@ -299,7 +279,7 @@ void smp_rx_remove_invalid(FAR struct smp_transport *zst, FAR void *arg)
 
 void smp_rx_clear(FAR struct smp_transport *zst)
 {
-  FAR struct net_buf *nb;
+  FAR struct smp_buf *nb;
 
   /* Cancel current work-queue if ongoing */
 
@@ -310,8 +290,34 @@ void smp_rx_clear(FAR struct smp_transport *zst)
 
   /* Drain the FIFO of all entries without re-adding any */
 
-  while ((nb = net_buf_get(&zst->fifo, K_NO_WAIT)) != NULL)
+  while ((nb = smp_buf_get(&zst->fifo, K_NO_WAIT)) != NULL)
     {
       smp_free_buf(nb, zst);
     }
+}
+
+/****************************************************************************
+ * Name: smp_init
+ ****************************************************************************/
+
+int smp_init(void)
+{
+  /* Initialize SMP buffers */
+#define CONFIG_MGMT_MCUMGR_SMP_BUF_COUNT 10
+#define CONFIG_MGMT_MCUMGR_SMP_BUF_SIZE  255
+#define CONFIG_MGMT_MCUMGR_SMP_BUF_USIZE 32
+  ret = smp_buf_init(CONFIG_MGMT_MCUMGR_SMP_BUF_COUNT,
+               CONFIG_MGMT_MCUMGR_SMP_BUF_SIZE,
+               CONFIG_MGMT_MCUMGR_SMP_BUF_USIZE);
+
+
+
+  k_work_queue_init(&smp_work_queue);
+
+  k_work_queue_start(&smp_work_queue, smp_work_queue_stack,
+                     K_THREAD_STACK_SIZEOF(smp_work_queue_stack),
+                     CONFIG_MCUMGR_TRANSPORT_WORKQUEUE_THREAD_PRIO,
+                     &smp_work_queue_config);
+
+  return 0;
 }

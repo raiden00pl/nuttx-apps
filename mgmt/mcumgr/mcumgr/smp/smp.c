@@ -38,6 +38,7 @@
 #include <mgmt/mcumgr/transport/smp.h>
 
 #include "transport/smp_internal.h"
+#include "utils/smp_buf.h"
 
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 /****************************************************************************
@@ -76,7 +77,7 @@ static int smp_translate_error_code(uint16_t group, uint16_t err)
  ****************************************************************************/
 
 static void cbor_nb_reader_init(FAR struct cbor_nb_reader *cnr,
-                                FAR struct net_buf *nb)
+                                FAR struct smp_buf *nb)
 {
   cnr->nb = nb;
   zcbor_new_decode_state(cnr->zs, ARRAY_SIZE(cnr->zs), nb->data, nb->len, 1,
@@ -88,14 +89,14 @@ static void cbor_nb_reader_init(FAR struct cbor_nb_reader *cnr,
  ****************************************************************************/
 
 static void cbor_nb_writer_init(FAR struct cbor_nb_writer *cnw,
-                                FAR struct net_buf *nb)
+                                FAR struct smp_buf *nb)
 {
-  net_buf_reset(nb);
+  smp_buf_reset(nb);
   cnw->nb      = nb;
   cnw->nb->len = sizeof(struct smp_hdr);
   zcbor_new_encode_state(cnw->zs, ARRAY_SIZE(cnw->zs),
                          nb->data + sizeof(struct smp_hdr),
-                         net_buf_tailroom(nb), 0);
+                         smp_buf_tailroom(nb), 0);
 }
 
 /****************************************************************************
@@ -143,7 +144,7 @@ static void smp_make_rsp_hdr(FAR const struct smp_hdr *req_hdr,
  * Name: smp_write_hdr
  ****************************************************************************/
 
-static int smp_read_hdr(FAR const struct net_buf *nb,
+static int smp_read_hdr(FAR const struct smp_buf *nb,
                         FAR struct smp_hdr *dst_hdr)
 {
   if (nb->len < sizeof(*dst_hdr))
@@ -459,7 +460,7 @@ static void smp_on_err(FAR struct smp_streamer *streamer,
 int smp_process_request_packet(FAR struct smp_streamer *streamer,
                                FAR void *vreq)
 {
-  FAR struct net_buf *req           = vreq;
+  FAR struct smp_buf *req           = vreq;
   FAR const char     *rsn           = NULL;
   bool                valid_hdr     = false;
   bool                handler_found = false;
@@ -489,7 +490,7 @@ int smp_process_request_packet(FAR struct smp_streamer *streamer,
 
       /* Skip the smp_hdr */
 
-      net_buf_pull(req, sizeof(struct smp_hdr));
+      smp_buf_pull(req, sizeof(struct smp_hdr));
 
       /* Does buffer contain whole message? */
 
@@ -553,7 +554,7 @@ int smp_process_request_packet(FAR struct smp_streamer *streamer,
 
       /* Trim processed request to free up space for subsequent responses. */
 
-      net_buf_pull(req, req_hdr.nh_len);
+      smp_buf_pull(req, req_hdr.nh_len);
 
     }
 
