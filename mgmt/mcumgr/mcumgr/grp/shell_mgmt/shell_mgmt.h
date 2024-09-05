@@ -1,5 +1,5 @@
 /****************************************************************************
- * apps/mgmt/mcumgr/smp_err.h
+ * apps/mgmt/mcumgr/mcumgr/shell_mgmt.h
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,17 +18,49 @@
  *
  ****************************************************************************/
 
-#ifndef __MGMT_MCUMGR_SMP_ERR_H
-#define __MGMT_MCUMGR_SMP_ERR_H
+#ifndef H_SHELL_MGMT_
+#define H_SHELL_MGMT_
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 /****************************************************************************
- * Included Files
+ * Pre-processor Definitions
  ****************************************************************************/
+
+/* Command IDs for shell management group */
+
+#define SHELL_MGMT_ID_EXEC 0
 
 /****************************************************************************
- * Public Function Prototypes
+ * Public Types
  ****************************************************************************/
 
-int smp_translate_error_code(uint16_t group, uint16_t ret);
+/* Command result codes for shell management group. */
 
-#endif  /* __MGMT_MCUMGR_SMP_ERR_H */
+enum shell_mgmt_err_code_t
+{
+  /* No error, this is implied if there is no ret value in the response */
+
+  SHELL_MGMT_ERR_OK = 0,
+
+  /* Unknown error occurred. */
+
+  SHELL_MGMT_ERR_UNKNOWN,
+
+  /* The provided command to execute is too long. */
+
+  SHELL_MGMT_ERR_COMMAND_TOO_LONG,
+
+  /* No command to execute was provided. */
+
+  SHELL_MGMT_ERR_EMPTY_COMMAND,
+};
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* H_SHELL_MGMT_ */

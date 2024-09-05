@@ -1,5 +1,5 @@
 /****************************************************************************
- * apps/mgmt/mcumgr/mcumgr/shell_mgmt.c
+ * apps/mgmt/mcumgr/mcumgr/os_mgmt.h
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,74 +18,68 @@
  *
  ****************************************************************************/
 
+#ifndef H_OS_MGMT_
+#define H_OS_MGMT_
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-/****************************************************************************
- * Private Function Prototypes
- ****************************************************************************/
+/* Command IDs for OS management group. */
+
+#define OS_MGMT_ID_ECHO			0
+#define OS_MGMT_ID_CONS_ECHO_CTRL	1
+#define OS_MGMT_ID_TASKSTAT		2
+#define OS_MGMT_ID_MPSTAT		3
+#define OS_MGMT_ID_DATETIME_STR		4
+#define OS_MGMT_ID_RESET		5
+#define OS_MGMT_ID_MCUMGR_PARAMS	6
+#define OS_MGMT_ID_INFO			7
+#define OS_MGMT_ID_BOOTLOADER_INFO	8
 
 /****************************************************************************
- * Private Data
+ * Public Types
  ****************************************************************************/
 
-static struct mgmt_handler shell_mgmt_handlers[] =
+/* Command result codes for OS management group */
+enum os_mgmt_err_code_t
 {
-  /* SHELL_MGMT_ID_EXEC */
+	/* No error, this is implied if there is no ret value in the response */
 
-  { NULL, shell_mgmt_exec },
+	OS_MGMT_ERR_OK = 0,
+
+	/* Unknown error occurred. */
+
+	OS_MGMT_ERR_UNKNOWN,
+
+	/* The provided format value is not valid. */
+
+	OS_MGMT_ERR_INVALID_FORMAT,
+
+	/* Query was not recognized. */
+
+	OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER,
+
+	/* RTC is not set */
+
+	OS_MGMT_ERR_RTC_NOT_SET,
+
+	/* RTC command failed */
+
+	OS_MGMT_ERR_RTC_COMMAND_FAILED,
 };
 
-static struct mgmt_group shell_mgmt_group =
-{
-  .mg_handlers       = shell_mgmt_handlers,
-  .mg_handlers_count = SHELL_MGMT_HANDLER_CNT,
-  .mg_group_id       = MGMT_GROUP_ID_SHELL,
-};
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/*
- * Command handler: shell exec
- *
- */
-
-static int shell_mgmt_exec(struct smp_streamer *ctxt)
-{
-}
-
-/****************************************************************************
- * Public Function
- ****************************************************************************/
-
-void shell_mgmt_register_group(void)
-{
-  mgmt_register_group(&shell_mgmt_group);
-}
-
-#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
-int shell_mgmt_translate_error_code(uint16_t ret)
-{
-  int rc;
-
-  switch (ret)
-    {
-      case SHELL_MGMT_RET_RC_COMMAND_TOO_LONG:
-      case SHELL_MGMT_RET_RC_EMPTY_COMMAND:
-        rc = MGMT_ERR_EINVAL;
-        break;
-
-      default:
-        rc = MGMT_ERR_EUNKNOWN;
-    }
-
-  return rc;
+#ifdef __cplusplus
 }
 #endif
+
+#endif /* H_OS_MGMT_ */

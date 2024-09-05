@@ -113,6 +113,86 @@ FAR const struct mgmt_handler *mgmt_find_handler(uint16_t group_id,
  *
  ****************************************************************************/
 
+const struct mgmt_group *mgmt_find_group(uint16_t group_id)
+{
+	sys_snode_t *snp;
+	sys_snode_t *sns;
+
+	/* Find the group with the specified group id */
+
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&mgmt_group_list, snp, sns)
+    {
+      struct mgmt_group *loop_group =
+        CONTAINER_OF(snp, struct mgmt_group, node);
+      if (loop_group->mg_group_id == group_id)
+        {
+          return loop_group;
+        }
+    }
+
+	return NULL;
+}
+
+/****************************************************************************
+ * Name:
+ *
+ * Description:
+ *
+ ****************************************************************************/
+
+const struct mgmt_handler *
+mgmt_get_handler(const struct mgmt_group *group, uint16_t command_id)
+{
+	if (command_id >= group->mg_handlers_count) {
+		return NULL;
+	}
+
+	if (!group->mg_handlers[command_id].mh_read &&
+	    !group->mg_handlers[command_id].mh_write) {
+		return NULL;
+	}
+
+	return &group->mg_handlers[command_id];
+}
+
+#if defined(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
+/****************************************************************************
+ * Name:
+ *
+ * Description:
+ *
+ ****************************************************************************/
+
+smp_translate_error_fn mgmt_find_error_translation_function(uint16_t group_id)
+{
+	struct mgmt_group *group = NULL;
+	sys_snode_t *snp, *sns;
+
+	/* Find the group with the specified group ID. */
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&mgmt_group_list, snp, sns) {
+		struct mgmt_group *loop_group =
+			CONTAINER_OF(snp, struct mgmt_group, node);
+		if (loop_group->mg_group_id == group_id) {
+			group = loop_group;
+			break;
+		}
+	}
+
+	if (group == NULL) {
+		return NULL;
+	}
+
+	return group->mg_translate_error;
+}
+#endif
+
+/****************************************************************************
+ * Name:
+ *
+ * Description:
+ *
+ ****************************************************************************/
+
 void mgmt_register_group(FAR struct mgmt_group *group)
 {
   sys_slist_append(&mgmt_group_list, &group->node);
