@@ -25,20 +25,13 @@
 #include <assert.h>
 #include <string.h>
 
-#include <zephyr/net/buf.h>
-#include <zephyr/sys/byteorder.h>
-
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
 
-#include <mgmt/mcumgr/mgmt/mgmt.h>
-#include <mgmt/mcumgr/smp/smp.h>
-#include <mgmt/mcumgr/smp/smp_client.h>
-#include <mgmt/mcumgr/transport/smp.h>
-
-#include "transport/smp_internal.h"
-#include "utils/smp_buf.h"
+#include <mgmt/mcumgr/mgmt.h>
+#include <mgmt/mcumgr/smp.h>
+#include <mgmt/mcumgr/smp_buf.h>
 
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 /****************************************************************************

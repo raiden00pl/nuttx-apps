@@ -34,11 +34,6 @@
  * Private Data
  ****************************************************************************/
 
-static struct k_work_q smp_work_queue;
-
-static const struct k_work_queue_config smp_work_queue_config
-    = { .name = "mcumgr smp" };
-
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
@@ -46,11 +41,6 @@ static const struct k_work_queue_config smp_work_queue_config
 /****************************************************************************
  * Name: smp_packet_alloc
  ****************************************************************************/
-
-FAR struct smp_buf *smp_packet_alloc(void)
-{
-  return smp_buf_alloc(&pkt_pool, K_NO_WAIT);
-}
 
 /****************************************************************************
  * Name: smp_process_packet
@@ -76,29 +66,13 @@ static int smp_process_packet(FAR struct smp_transport *smpt, FAR struct smp_buf
 }
 
 /****************************************************************************
- * Name: smp_handle_regs
- *
- * Description:
- *   Processes all received SNP request packets.
- *
- ****************************************************************************/
-
-static void smp_handle_reqs(FAR struct k_work *work)
-{
-  FAR struct smp_transport *smpt;
-  FAR struct smp_buf       *nb;
-
-  smpt = (FAR void *)work;
-
-  while ((nb = smp_buf_get(&smpt->fifo, K_NO_WAIT)) != NULL)
-    {
-      smp_process_packet(smpt, nb);
-    }
-}
-
-/****************************************************************************
  * Public Functions
  ****************************************************************************/
+
+FAR struct smp_buf *smp_packet_alloc(void)
+{
+  return smp_buf_alloc(&pkt_pool, K_NO_WAIT);
+}
 
 /****************************************************************************
  * Name: smp_packet_free
@@ -193,9 +167,6 @@ int smp_transport_init(FAR struct smp_transport *smpt)
   smp_reassembly_init(smpt);
 #endif
 
-  k_work_init(&smpt->work, smp_handle_reqs);
-  k_fifo_init(&smpt->fifo);
-
   return 0;
 }
 
@@ -214,86 +185,28 @@ int smp_transport_init(FAR struct smp_transport *smpt)
 
 void smp_rx_req(FAR struct smp_transport *smpt, FAR struct smp_buf *nb)
 {
-  smp_buf_put(&smpt->fifo, nb);
-  k_work_submit_to_queue(&smp_work_queue, &smpt->work);
+  smp_process_packet(smpt, nb);
 }
 
 /****************************************************************************
  * Name: smp_rx_remove_invalid
  ****************************************************************************/
 
-void smp_rx_remove_invalid(FAR struct smp_transport *zst, FAR void *arg)
+void smp_rx_remove_invalid(FAR struct smp_transport *smpt, FAR void *arg)
 {
-  FAR struct smp_buf *nb;
-  struct k_fifo temp_fifo;
+  /* Not implemented yet */
 
-  if (zst->functions.query_valid_check == NULL)
-    {
-      /* No check check function registered, abort check */
-
-      return;
-    }
-
-  /* Cancel current work-queue if ongoing */
-  if (k_work_busy_get(&zst->work) & (K_WORK_RUNNING | K_WORK_QUEUED))
-    {
-      k_work_cancel(&zst->work);
-    }
-
-  /* Run callback function and remove all buffers that are no longer needed.
-   * Store those that are in a temporary FIFO
-   */
-
-  k_fifo_init(&temp_fifo);
-
-  while ((nb = smp_buf_get(&zst->fifo, K_NO_WAIT)) != NULL)
-    {
-      if (!zst->functions.query_valid_check(nb, arg))
-        {
-          smp_free_buf(nb, zst);
-        }
-      else
-        {
-          smp_buf_put(&temp_fifo, nb);
-        }
-    }
-
-  /* Re-insert the remaining queued operations into the original FIFO */
-
-  while ((nb = smp_buf_get(&temp_fifo, K_NO_WAIT)) != NULL)
-    {
-      smp_buf_put(&zst->fifo, nb);
-    }
-
-  /* If at least one entry remains, queue the workqueue for running */
-
-  if (!k_fifo_is_empty(&zst->fifo))
-    {
-      k_work_submit_to_queue(&smp_work_queue, &zst->work);
-    }
+  ASSERT(0);
 }
 
 /****************************************************************************
  * Name: smp_rx_clear
  ****************************************************************************/
 
-void smp_rx_clear(FAR struct smp_transport *zst)
+void smp_rx_clear(FAR struct smp_transport *smpt)
 {
-  FAR struct smp_buf *nb;
-
-  /* Cancel current work-queue if ongoing */
-
-  if (k_work_busy_get(&zst->work) & (K_WORK_RUNNING | K_WORK_QUEUED))
-    {
-      k_work_cancel(&zst->work);
-    }
-
-  /* Drain the FIFO of all entries without re-adding any */
-
-  while ((nb = smp_buf_get(&zst->fifo, K_NO_WAIT)) != NULL)
-    {
-      smp_free_buf(nb, zst);
-    }
+  /* Not implemented */
+  ASSERT(0);
 }
 
 /****************************************************************************
@@ -306,18 +219,10 @@ void smp_rx_clear(FAR struct smp_transport *zst)
 int smp_init(void)
 {
   /* Initialize SMP buffers */
+
   ret = smp_buf_init(CONFIG_MGMT_MCUMGR_SMP_BUF_COUNT,
                CONFIG_MGMT_MCUMGR_SMP_BUF_SIZE,
                CONFIG_MGMT_MCUMGR_SMP_BUF_USIZE);
-
-
-
-  k_work_queue_init(&smp_work_queue);
-
-  k_work_queue_start(&smp_work_queue, smp_work_queue_stack,
-                     K_THREAD_STACK_SIZEOF(smp_work_queue_stack),
-                     CONFIG_MCUMGR_TRANSPORT_WORKQUEUE_THREAD_PRIO,
-                     &smp_work_queue_config);
 
   return 0;
 }

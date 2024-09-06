@@ -30,6 +30,10 @@
  * Public Function
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: main
+ ****************************************************************************/
+
 int main(int argc, FAR char *argv[])
 {
   int ret;
@@ -44,14 +48,11 @@ int main(int argc, FAR char *argv[])
     }
 
   /*  */
+#warning let user decide what handler enable or like in zephyr do it automaticly in mcumgr_handlers_init ?
 
   ret = os_mgmt_register_group();
   ret = shell_mgmt_register_group();
   ret = enum_mgmt_register_group();
-
-  /* Initialize handlers */
-
-  ret = mcumgr_handlers_init()
 
 
 

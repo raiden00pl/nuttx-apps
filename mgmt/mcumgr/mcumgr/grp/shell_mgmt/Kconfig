@@ -30,6 +30,7 @@ if MCUMGR_GRP_SHELL
 
 # Show dummy shell buffer size here, will show help text of original prompt so
 # nothing extra is needed here, nor a default value.
+
 config SHELL_BACKEND_DUMMY_BUF_SIZE
 	int "Shell output buffer size (Size of dummy buffer size)"
 
@@ -43,8 +44,5 @@ config MCUMGR_GRP_SHELL_LEGACY_RC_RETURN_CODE
 	  shell command exit code, and rc will be used for SMP processing
 	  error codes.
 
-module = MCUMGR_GRP_SHELL
-module-str = mcumgr_grp_shell
-source "subsys/logging/Kconfig.template.log_config"
 
 endif # MCUMGR_GRP_SHELL

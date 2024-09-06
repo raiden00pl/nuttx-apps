@@ -18,8 +18,8 @@
  *
  ****************************************************************************/
 
-#ifndef __MGMT_MCUMGR_MCUMGR_SMP_BUF_H
-#define __MGMT_MCUMGR_MCUMGR_SMP_BUF_H
+#ifndef __INCLUDE_MGMT_MCUMGR_SMP_BUF_H
+#define __INCLUDE_MGMT_MCUMGR_SMP_BUF_H
 
 /****************************************************************************
  * Included Files
@@ -81,4 +81,4 @@ FAR void *smp_buf_add_mem(FAR struct smp_buf *buf, FAR const void *mem,
 }
 #endif
 
-#endif /* __MGMT_MCUMGR_MCUMGR_SMP_BUF_H */
+#endif /* __INCLUDE_MGMT_MCUMGR_SMP_BUF_H */

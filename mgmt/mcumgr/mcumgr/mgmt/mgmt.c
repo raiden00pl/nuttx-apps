@@ -23,18 +23,15 @@
  ****************************************************************************/
 
 #include <string.h>
-#include <zephyr/device.h>
-#include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
-#include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/iterable_sections.h>
-#include <zephyr/sys/slist.h>
+
+#include <mgmt/mcumgr/mgmt.h>
 
 /****************************************************************************
  * Private Data Types
  ****************************************************************************/
 
-static sys_slist_t mgmt_group_list = SYS_SLIST_STATIC_INIT(&mgmt_group_list);
+static struct list_node g_mgmt_group_list =
+  LIST_INITIAL_VALUE(g_mgmt_group_list);
 
 /****************************************************************************
  * Private Functions
@@ -45,7 +42,7 @@ static sys_slist_t mgmt_group_list = SYS_SLIST_STATIC_INIT(&mgmt_group_list);
  ****************************************************************************/
 
 /****************************************************************************
- * Name:
+ * Name: mgmt_unregister_group
  *
  * Description:
  *
@@ -53,7 +50,9 @@ static sys_slist_t mgmt_group_list = SYS_SLIST_STATIC_INIT(&mgmt_group_list);
 
 void mgmt_unregister_group(FAR struct mgmt_group *group)
 {
-  (void)sys_slist_find_and_remove(&mgmt_group_list, &group->node);
+  /* Not supported */
+
+  ASSERT(0);
 }
 
 /****************************************************************************
@@ -67,8 +66,7 @@ FAR const struct mgmt_handler *mgmt_find_handler(uint16_t group_id,
                                                  uint16_t command_id)
 {
   FAR struct mgmt_group *group = NULL;
-  FAR sys_snode_t *snp;
-  FAR sys_snode_t *sns;
+  FAR struct mgmt_group *loop_group;
 
   /* Find the group with the specified group id, if one exists
    * check the handler for the command id and make sure
@@ -76,10 +74,9 @@ FAR const struct mgmt_handler *mgmt_find_handler(uint16_t group_id,
    * with a command id that is set
    */
 
-  SYS_SLIST_FOR_EACH_NODE_SAFE(&mgmt_group_list, snp, sns)
+  list_for_every_entry(&g_mgmt_group_list, loop_group,
+                       struct mgmt_group, node)
   {
-    FAR struct mgmt_group *loop_group
-        = CONTAINER_OF(snp, struct mgmt_group, node);
     if (loop_group->mg_group_id == group_id)
       {
         if (command_id >= loop_group->mg_handlers_count)
@@ -107,7 +104,7 @@ FAR const struct mgmt_handler *mgmt_find_handler(uint16_t group_id,
 }
 
 /****************************************************************************
- * Name:
+ * Name: mgmt_find_group
  *
  * Description:
  *
@@ -115,15 +112,13 @@ FAR const struct mgmt_handler *mgmt_find_handler(uint16_t group_id,
 
 const struct mgmt_group *mgmt_find_group(uint16_t group_id)
 {
-	sys_snode_t *snp;
-	sys_snode_t *sns;
+  struct mgmt_group *loop_group;
 
 	/* Find the group with the specified group id */
 
-	SYS_SLIST_FOR_EACH_NODE_SAFE(&mgmt_group_list, snp, sns)
+  list_for_every_entry(&g_mgmt_group_list, loop_group,
+                       struct mgmt_group, node)
     {
-      struct mgmt_group *loop_group =
-        CONTAINER_OF(snp, struct mgmt_group, node);
       if (loop_group->mg_group_id == group_id)
         {
           return loop_group;
@@ -134,7 +129,7 @@ const struct mgmt_group *mgmt_find_group(uint16_t group_id)
 }
 
 /****************************************************************************
- * Name:
+ * Name: mgmt_get_handler
  *
  * Description:
  *
@@ -143,51 +138,57 @@ const struct mgmt_group *mgmt_find_group(uint16_t group_id)
 const struct mgmt_handler *
 mgmt_get_handler(const struct mgmt_group *group, uint16_t command_id)
 {
-	if (command_id >= group->mg_handlers_count) {
-		return NULL;
-	}
+	if (command_id >= group->mg_handlers_count)
+    {
+      return NULL;
+    }
 
 	if (!group->mg_handlers[command_id].mh_read &&
-	    !group->mg_handlers[command_id].mh_write) {
-		return NULL;
-	}
+	    !group->mg_handlers[command_id].mh_write)
+    {
+      return NULL;
+    }
 
 	return &group->mg_handlers[command_id];
 }
 
-#if defined(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
+#ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 /****************************************************************************
- * Name:
+ * Name: mgmt_find_error_translation_function
  *
  * Description:
  *
  ****************************************************************************/
 
-smp_translate_error_fn mgmt_find_error_translation_function(uint16_t group_id)
+smp_translate_error_fn
+mgmt_find_error_translation_function(uint16_t group_id)
 {
-	struct mgmt_group *group = NULL;
-	sys_snode_t *snp, *sns;
+	FAR struct mgmt_group *group = NULL;
+  FAR struct mgmt_group *loop_group;
 
 	/* Find the group with the specified group ID. */
-	SYS_SLIST_FOR_EACH_NODE_SAFE(&mgmt_group_list, snp, sns) {
-		struct mgmt_group *loop_group =
-			CONTAINER_OF(snp, struct mgmt_group, node);
-		if (loop_group->mg_group_id == group_id) {
-			group = loop_group;
-			break;
-		}
-	}
 
-	if (group == NULL) {
-		return NULL;
-	}
+  list_for_every_entry(&mgmt_group_list, loop_group,
+                       struct mgmt_group, node)
+    {
+      if (loop_group->mg_group_id == group_id)
+        {
+          group = loop_group;
+          break;
+        }
+    }
+
+	if (group == NULL)
+    {
+      return NULL;
+    }
 
 	return group->mg_translate_error;
 }
 #endif
 
 /****************************************************************************
- * Name:
+ * Name: mgmt_register_group
  *
  * Description:
  *
@@ -195,27 +196,5 @@ smp_translate_error_fn mgmt_find_error_translation_function(uint16_t group_id)
 
 void mgmt_register_group(FAR struct mgmt_group *group)
 {
-  sys_slist_append(&mgmt_group_list, &group->node);
-}
-
-/****************************************************************************
- * Name: mcumgr_handlers_init
- *
- * Description:
- *   Processes all registered MCUmgr handlers at start up and registers them
- *
- ****************************************************************************/
-
-int mcumgr_handlers_init(void)
-{
-
-  STRUCT_SECTION_FOREACH(mcumgr_handler, handler)
-    {
-      if (handler->init)
-        {
-          handler->init();
-        }
-    }
-
-  return 0;
+  list_add_tail(&g_mgmt_group_list, &group->node);
 }

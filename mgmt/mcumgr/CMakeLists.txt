@@ -24,13 +24,13 @@ if(CONFIG_MGMT_MCUMGR)
   if(CONFIG_MGMT_MCUMGR_DAEMON)
     nuttx_add_application(
       NAME
-      ${MGMT_MCUMGR_DAEMON_PROGNAME}
+      ${CONFIG_MGMT_MCUMGR_DAEMON_PROGNAME}
       SRCS
-      hello_main.c
+      mcumgr_daemon.c
       STACKSIZE
-      ${MGMT_MCUMGR_DAEMON_STACKSIZE}
+      ${CONFIG_MGMT_MCUMGR_DAEMON_STACKSIZE}
       PRIORITY
-      ${MGMT_MCUMGR_DAEMON_PRIORITY}
+      ${CONFIG_MGMT_MCUMGR_DAEMON_PRIORITY}
       DEPENDS
       mcumgr)
   endif()
@@ -38,9 +38,8 @@ if(CONFIG_MGMT_MCUMGR)
   set(SRCS
     mcumgr/mgmt/mgmt.c
     mcumgr/smp/smp.c
-    mcumgr/smp/smp_err.c
-    mcumgr/util/smp_buf.c
-    mcumgr/util/zcbor_bulk.c)
+    mcumgr/utils/smp_buf.c
+    mcumgr/utils/zcbor_bulk.c)
 
 
   # if(xxx)
