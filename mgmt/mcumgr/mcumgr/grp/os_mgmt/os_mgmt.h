@@ -51,6 +51,7 @@ extern "C"
  ****************************************************************************/
 
 /* Command result codes for OS management group */
+
 enum os_mgmt_err_code_t
 {
 	/* No error, this is implied if there is no ret value in the response */

@@ -36,8 +36,8 @@ extern "C"
  * Public Types
  ****************************************************************************/
 
-struct smp_transport;
-struct smp_buf;
+struct smp_transport_s;
+struct smp_buf_s;
 
 /****************************************************************************
  * Name: smp_transport_out_fn
@@ -45,10 +45,10 @@ struct smp_buf;
  * Description:
  *   SMP transmit callback for transport
  *
- *   The supplied smp_buf is always consumed, regardless of return code.
+ *   The supplied smp_buf_s is always consumed, regardless of return code.
  *
  * Input Parameters:
- *   nb - The smp_buf to transmit.
+ *   nb - The smp_buf_s to transmit.
  *
  * Return Value:
  *   0 on success,
@@ -57,7 +57,7 @@ struct smp_buf;
  *
  ****************************************************************************/
 
-typedef CODE int (*smp_transport_out_fn)(FAR struct smp_buf *nb);
+typedef CODE int (*smp_transport_out_fn)(FAR struct smp_buf_s *nb);
 
 /****************************************************************************
  * Name: smp_transport_get_mtu_fn
@@ -65,10 +65,10 @@ typedef CODE int (*smp_transport_out_fn)(FAR struct smp_buf *nb);
  * Description:
  *   SMP MTU query callback for transport
  *
- *   The supplied smp_buf should contain a request received from the peer
- *   whose MTU is being queried.  This function takes a smp_buf parameter
+ *   The supplied smp_buf_s should contain a request received from the peer
+ *   whose MTU is being queried.  This function takes a smp_buf_s parameter
  *   because some transports store connection-specific information in the
- *   smp_buf user header (e.g., the BLE transport stores the peer address).
+ *   smp_buf_s user header (e.g., the BLE transport stores the peer address).
  *
  * Input Parameters:
  *   nb - Contains a request from the relevant peer.
@@ -81,7 +81,7 @@ typedef CODE int (*smp_transport_out_fn)(FAR struct smp_buf *nb);
  ****************************************************************************/
 
 typedef CODE uint16_t (*smp_transport_get_mtu_fn)(
-  FAR const struct smp_buf *nb);
+  FAR const struct smp_buf_s *nb);
 
 /****************************************************************************
  * Name: smp_transport_ud_copy_fn
@@ -89,7 +89,7 @@ typedef CODE uint16_t (*smp_transport_get_mtu_fn)(
  * Description:
  *   SMP copy user_data callback
  *
- *   The supplied src smp_buf should contain a user_data that cannot be
+ *   The supplied src smp_buf_s should contain a user_data that cannot be
  *   copied using regular memcpy function (e.g., the BLE transport smp_buf
  *   user_data stores the connection reference that has to be incremented
  *   when is going to be used by another buffer).
@@ -103,8 +103,8 @@ typedef CODE uint16_t (*smp_transport_get_mtu_fn)(
  *
  ****************************************************************************/
 
-typedef CODE int (*smp_transport_ud_copy_fn)(FAR struct smp_buf *dst,
-                                             FAR const struct smp_buf *src);
+typedef CODE int (*smp_transport_ud_copy_fn)(FAR struct smp_buf_s *dst,
+                                             FAR const struct smp_buf_s *src);
 
 /****************************************************************************
  * Name: smp_transport_ud_free_fn
@@ -112,8 +112,8 @@ typedef CODE int (*smp_transport_ud_copy_fn)(FAR struct smp_buf *dst,
  * Description:
  *   SMP free user_data callback
  *
- *   This function frees smp_buf user data, because some transports store
- *   connection-specific information in the smp_buf user data (e.g., the BLE
+ *   This function frees smp_buf_s user data, because some transports store
+ *   connection-specific information in the smp_buf_s user data (e.g., the BLE
  *   transport stores the connection reference that has to be decreased).
  *
  * Input Parameters:
@@ -143,7 +143,7 @@ typedef CODE void (*smp_transport_ud_free_fn)(FAR void *ud);
  ****************************************************************************/
 
 typedef CODE bool (*smp_transport_query_valid_check_fn)(
-  FAR struct smp_buf *nb, FAR void *arg);
+  FAR struct smp_buf_s *nb, FAR void *arg);
 
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 /****************************************************************************
@@ -179,9 +179,9 @@ enum smp_mcumgr_version_t
 
 /* CBOR reader state */
 
-struct cbor_nb_reader
+struct cbor_nb_reader_s
 {
-  FAR struct smp_buf *nb;
+  FAR struct smp_buf_s *nb;
 
   /* CONFIG_MCUMGR_SMP_CBOR_MAX_DECODING_LEVELS + 2 translates to minimal
    * zcbor backup states.
@@ -192,9 +192,9 @@ struct cbor_nb_reader
 
 /* CBOR writer state */
 
-struct cbor_nb_writer
+struct cbor_nb_writer_s
 {
-  struct smp_buf *nb;
+  struct smp_buf_s *nb;
   zcbor_state_t zs[CONFIG_MCUMGR_SMP_CBOR_MAX_ENCODING_LEVELS + 2];
 
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
@@ -205,11 +205,11 @@ struct cbor_nb_writer
 
 /* Decodes, encodes, and transmits SMP packets. */
 
-struct smp_streamer
+struct smp_streamer_s
 {
-  FAR struct smp_transport  *smpt;
-  FAR struct cbor_nb_reader *reader;
-  FAR struct cbor_nb_writer *writer;
+  FAR struct smp_transport_s  *smpt;
+  FAR struct cbor_nb_reader_s *reader;
+  FAR struct cbor_nb_writer_s *writer;
 
 #ifdef CONFIG_MCUMGR_SMP_VERBOSE_ERR_RESPONSE
   FAr const char *rc_rsn;
@@ -218,7 +218,7 @@ struct smp_streamer
 
 /* SMP header */
 
-struct smp_hdr
+struct smp_hdr_s
 {
 #ifdef CONFIG_LITTLE_ENDIAN
   uint8_t  nh_op:3;             /* MGMT_OP_[...] */
@@ -240,7 +240,7 @@ struct smp_hdr
  * it is not supported/implemented.
  */
 
-struct smp_transport_api_t
+struct smp_transport_api_s
 {
 	/* Transport's send function. */
 
@@ -267,23 +267,23 @@ struct smp_transport_api_t
 
 /* Packet reassembly internal data, API access only */
 
-struct smp_transport_reassembly
+struct smp_transport_reassembly_s
 {
-  FAR struct smp_buf *current;    /* smp_buf used for reassembly */
+  FAR struct smp_buf_s *current;    /* smp_buf_s used for reassembly */
   uint16_t            expected;		/* expected bytes to come */
 };
 #endif
 
 /* SMP transport object for sending SMP responses. */
 
-struct smp_transport
+struct smp_transport_s
 {
 	/* Function pointers */
 
-	struct smp_transport_api_t functions;
+	struct smp_transport_api_s functions;
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_REASSEMBLY
-  struct smp_transport_reassembly __reassembly;
+  struct smp_transport_reassembly_s __reassembly;
 #endif
 };
 
@@ -312,7 +312,7 @@ struct smp_transport
  *
  ****************************************************************************/
 
-int smp_process_request_packet(struct smp_streamer *streamer, void *req);
+int smp_process_request_packet(struct smp_streamer_s *streamer, void *req);
 
 /****************************************************************************
  * Name: smp_add_cmd_err
@@ -340,15 +340,15 @@ bool smp_add_cmd_err(zcbor_state_t *zse, uint16_t group, uint16_t ret);
  * Name: smp_packet_alloc
  *
  * Description:
-*   Allocates a smp_buf for holding an mcumgr request or response.
+*   Allocates a smp_buf_s for holding an mcumgr request or response.
 *
 * Return Value:
-*   A newly-allocated buffer smp_buf on success;
+*   A newly-allocated buffer smp_buf_s on success;
 *   NULL on failure.
 *
 ****************************************************************************/
 
-struct smp_buf *smp_packet_alloc(void);
+struct smp_buf_s *smp_packet_alloc(void);
 
 /****************************************************************************
  * Name: smp_packet_free
@@ -357,11 +357,11 @@ struct smp_buf *smp_packet_alloc(void);
  *   Frees an mcumgr smp_buf
  *
  * Input Parameters:
- *   nb - The smp_buf to free.
+ *   nb - The smp_buf_s to free.
  *
  ****************************************************************************/
 
-void smp_packet_free(struct smp_buf *nb);
+void smp_packet_free(struct smp_buf_s *nb);
 
 /****************************************************************************
  * Name: smp_rx_req
@@ -376,7 +376,7 @@ void smp_packet_free(struct smp_buf *nb);
  *
  ****************************************************************************/
 
-void smp_rx_req(FAR struct smp_transport *smtp, FAR struct smp_buf *nb);
+void smp_rx_req(FAR struct smp_transport_s *smtp, FAR struct smp_buf_s *nb);
 
 /****************************************************************************
  * Name: smp_alloc_rsp
@@ -427,7 +427,7 @@ void smp_free_buf(FAR void *buf, FAR void *arg);
  *
  ****************************************************************************/
 
-int smp_transport_init(FAR struct smp_transport *smpt);
+int smp_transport_init(FAR struct smp_transport_s *smpt);
 
 /****************************************************************************
  * Name: smp_rx_remove_invalid
@@ -447,7 +447,7 @@ int smp_transport_init(FAR struct smp_transport *smpt);
  *
  ****************************************************************************/
 
-void smp_rx_remove_invalid(FAR struct smp_transport *smpt, FAR void *arg);
+void smp_rx_remove_invalid(FAR struct smp_transport_s *smpt, FAR void *arg);
 
 /****************************************************************************
  * Name: smp_rx_clear
@@ -460,7 +460,7 @@ void smp_rx_remove_invalid(FAR struct smp_transport *smpt, FAR void *arg);
  *
  ****************************************************************************/
 
-void smp_rx_clear(FAR struct smp_transport *smpt);
+void smp_rx_clear(FAR struct smp_transport_s *smpt);
 
 #ifdef __cplusplus
 }

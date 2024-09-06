@@ -109,7 +109,7 @@ static const struct mgmt_handler os_mgmt_group_handlers[] =
   },
 };
 
-static struct mgmt_group os_mgmt_group =
+static struct mgmt_group_s os_mgmt_group =
 {
   .mg_handlers       = os_mgmt_group_handlers,
   .mg_handlers_count = OS_MGMT_GROUP_SZ,

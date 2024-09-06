@@ -34,14 +34,14 @@
  * Private Data
  ****************************************************************************/
 
-static struct mgmt_handler shell_mgmt_handlers[] =
+static struct mgmt_handler_s shell_mgmt_handlers[] =
 {
   /* SHELL_MGMT_ID_EXEC */
 
   { NULL, shell_mgmt_exec },
 };
 
-static struct mgmt_group shell_mgmt_group =
+static struct mgmt_group_s shell_mgmt_group =
 {
   .mg_handlers       = shell_mgmt_handlers,
   .mg_handlers_count = SHELL_MGMT_HANDLER_CNT,

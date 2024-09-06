@@ -69,8 +69,8 @@ static int smp_translate_error_code(uint16_t group, uint16_t err)
  * Name: cbor_nb_reader_init
  ****************************************************************************/
 
-static void cbor_nb_reader_init(FAR struct cbor_nb_reader *cnr,
-                                FAR struct smp_buf *nb)
+static void cbor_nb_reader_init(FAR struct cbor_nb_reader_s *cnr,
+                                FAR struct smp_buf_s *nb)
 {
   cnr->nb = nb;
   zcbor_new_decode_state(cnr->zs, ARRAY_SIZE(cnr->zs), nb->data, nb->len, 1,
@@ -81,14 +81,14 @@ static void cbor_nb_reader_init(FAR struct cbor_nb_reader *cnr,
  * Name: cbor_nb_writer_init
  ****************************************************************************/
 
-static void cbor_nb_writer_init(FAR struct cbor_nb_writer *cnw,
-                                FAR struct smp_buf *nb)
+static void cbor_nb_writer_init(FAR struct cbor_nb_writer_s *cnw,
+                                FAR struct smp_buf_s *nb)
 {
   smp_buf_reset(nb);
   cnw->nb      = nb;
-  cnw->nb->len = sizeof(struct smp_hdr);
+  cnw->nb->len = sizeof(struct smp_hdr_s);
   zcbor_new_encode_state(cnw->zs, ARRAY_SIZE(cnw->zs),
-                         nb->data + sizeof(struct smp_hdr),
+                         nb->data + sizeof(struct smp_hdr_s),
                          smp_buf_tailroom(nb), 0);
 }
 
@@ -116,29 +116,26 @@ static uint8_t smp_rsp_op(uint8_t req_op)
  * Name: smp_make_rsp_hdr
  ****************************************************************************/
 
-static void smp_make_rsp_hdr(FAR const struct smp_hdr *req_hdr,
-                             FAR struct smp_hdr *rsp_hdr, size_t len)
+static void smp_make_rsp_hdr(FAR const struct smp_hdr_s *req_hdr,
+                             FAR struct smp_hdr_s *rsp_hdr, size_t len)
 {
-#warning fixme
-  *rsp_hdr = (struct smp_hdr){
-    .nh_len   = sys_cpu_to_be16(len),
-    .nh_flags = 0,
-    .nh_op    = smp_rsp_op(req_hdr->nh_op),
-    .nh_group = sys_cpu_to_be16(req_hdr->nh_group),
-    .nh_seq   = req_hdr->nh_seq,
-    .nh_id    = req_hdr->nh_id,
-    .nh_version
-    = (req_hdr->nh_version > SMP_MCUMGR_VERSION_2 ? SMP_MCUMGR_VERSION_2
-                                                  : req_hdr->nh_version),
-  };
+  rsp_hdr->nh_len     = sys_cpu_to_be16(len);
+  rsp_hdr->nh_flags   = 0;
+  rsp_hdr->nh_op      = smp_rsp_op(req_hdr->nh_op);
+  rsp_hdr->nh_group   = sys_cpu_to_be16(req_hdr->nh_group);
+  rsp_hdr->nh_seq     = req_hdr->nh_seq;
+  rsp_hdr->nh_id      = req_hdr->nh_id;
+  rsp_hdr->nh_version =
+    (req_hdr->nh_version > SMP_MCUMGR_VERSION_2 ? SMP_MCUMGR_VERSION_2
+     : req_hdr->nh_version);
 }
 
 /****************************************************************************
  * Name: smp_write_hdr
  ****************************************************************************/
 
-static int smp_read_hdr(FAR const struct smp_buf *nb,
-                        FAR struct smp_hdr *dst_hdr)
+static int smp_read_hdr(FAR const struct smp_buf_s *nb,
+                        FAR struct smp_hdr_s *dst_hdr)
 {
   if (nb->len < sizeof(*dst_hdr))
     {
@@ -156,8 +153,8 @@ static int smp_read_hdr(FAR const struct smp_buf *nb,
  * Name: smp_write_hdr
  ****************************************************************************/
 
-static inline int smp_write_hdr(FAR struct smp_streamer *streamer,
-                                FAR const struct smp_hdr *src_hdr)
+static inline int smp_write_hdr(FAR struct smp_streamer_s *streamer,
+                                FAR const struct smp_hdr_s *src_hdr)
 {
   memcpy(streamer->writer->nb->data, src_hdr, sizeof(*src_hdr));
   return 0;
@@ -167,16 +164,16 @@ static inline int smp_write_hdr(FAR struct smp_streamer *streamer,
  * Name: smp_build_err_rsp
  ****************************************************************************/
 
-static int smp_build_err_rsp(FAR struct smp_streamer *streamer,
-                             FAR const struct smp_hdr *req_hdr, int status,
+static int smp_build_err_rsp(FAR struct smp_streamer_s *streamer,
+                             FAR const struct smp_hdr_s *req_hdr, int status,
                              FAR const char *rc_rsn)
 {
-  FAR struct cbor_nb_writer *nbw = streamer->writer;
-  FAR zcbor_state_t         *zsp = nbw->zs;
-  struct smp_hdr             rsp_hdr;
-  bool                       ok;
+  FAR struct cbor_nb_writer_s *nbw = streamer->writer;
+  FAR zcbor_state_t           *zsp = nbw->zs;
+  struct smp_hdr_s             rsp_hdr;
+  bool                         ok;
 
-  ARG_UNUSED(rc_rsn);
+  UNUSED(rc_rsn);
 
   ok = zcbor_map_start_encode(zsp, 2) && zcbor_tstr_put_lit(zsp, "rc")
        && zcbor_int32_put(zsp, status);
@@ -216,13 +213,13 @@ static int smp_build_err_rsp(FAR struct smp_streamer *streamer,
  *
  ****************************************************************************/
 
-static int smp_handle_single_payload(FAR struct smp_streamer *cbuf,
-                                     FAR const struct smp_hdr *req_hdr)
+static int smp_handle_single_payload(FAR struct smp_streamer_s *cbuf,
+                                     FAR const struct smp_hdr_s *req_hdr)
 {
-  FAR const struct mgmt_group   *group;
-  FAr const struct mgmt_handler *handler;
-  mgmt_handler_fn                handler_fn;
-  int                            rc;
+  FAR const struct mgmt_group_s   *group;
+  FAR const struct mgmt_handler_s *handler;
+  mgmt_handler_fn                  handler_fn;
+  int                              rc;
 
   group = mgmt_find_group(req_hdr->nh_group);
   if (group == NULL)
@@ -304,14 +301,14 @@ static int smp_handle_single_payload(FAR struct smp_streamer *cbuf,
  *
  ****************************************************************************/
 
-static int smp_handle_single_req(FAR struct smp_streamer *streamer,
-                                 FAR const struct smp_hdr *req_hdr,
+static int smp_handle_single_req(FAR struct smp_streamer_s *streamer,
+                                 FAR const struct smp_hdr_s *req_hdr,
                                  FAR const char **rsn)
 {
-  FAR struct cbor_nb_writer *nbw = streamer->writer;
-  FAR zcbor_state_t         *zsp = nbw->zs;
-  struct smp_hdr             rsp_hdr;
-  int                        rc;
+  FAR struct cbor_nb_writer_s *nbw = streamer->writer;
+  FAR zcbor_state_t           *zsp = nbw->zs;
+  struct smp_hdr_s             rsp_hdr;
+  int                          rc;
 
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
   nbw->error_group = 0;
@@ -328,7 +325,6 @@ static int smp_handle_single_req(FAR struct smp_streamer *streamer,
   /* We do not currently support future versions of the protocol */
 
   if (req_hdr->nh_version > SMP_MCUMGR_VERSION_2)
-    p
     {
       return MGMT_ERR_UNSUPPORTED_TOO_NEW;
     }
@@ -382,8 +378,8 @@ static int smp_handle_single_req(FAR struct smp_streamer *streamer,
  *
  ****************************************************************************/
 
-static void smp_on_err(FAR struct smp_streamer *streamer,
-                       FAR const struct smp_hdr *req_hdr, FAR void *req,
+static void smp_on_err(FAR struct smp_streamer_s *streamer,
+                       FAR const struct smp_hdr_s *req_hdr, FAR void *req,
                        FAR void *rsp, int status, FAR const char *rsn)
 {
   int rc;
@@ -450,18 +446,18 @@ static void smp_on_err(FAR struct smp_streamer *streamer,
  *
  ****************************************************************************/
 
-int smp_process_request_packet(FAR struct smp_streamer *streamer,
+int smp_process_request_packet(FAR struct smp_streamer_s *streamer,
                                FAR void *vreq)
 {
-  FAR struct smp_buf *req           = vreq;
-  FAR const char     *rsn           = NULL;
-  bool                valid_hdr     = false;
-  bool                handler_found = false;
-  struct smp_hdr      req_hdr;
-  FAR void           *rsp;
-  int                 rc            = 0;
+  FAR struct smp_buf_s *req           = vreq;
+  FAR const char       *rsn           = NULL;
+  bool                  valid_hdr     = false;
+  bool                  handler_found = false;
+  struct smp_hdr_s      req_hdr;
+  FAR void             *rsp;
+  int                   rc            = 0;
 
-  memset(req_hdr, 0, sizeof(struct smp_hdr));
+  memset(&req_hdr, 0, sizeof(struct smp_hdr_s));
 
   rsp = NULL;
 
@@ -481,9 +477,9 @@ int smp_process_request_packet(FAR struct smp_streamer *streamer,
 
       valid_hdr = true;
 
-      /* Skip the smp_hdr */
+      /* Skip the smp_hdr_s */
 
-      smp_buf_pull(req, sizeof(struct smp_hdr));
+      smp_buf_pull(req, sizeof(struct smp_hdr_s));
 
       /* Does buffer contain whole message? */
 
@@ -519,9 +515,9 @@ int smp_process_request_packet(FAR struct smp_streamer *streamer,
           rc  = streamer->smpt->functions.output(rsp);
           rsp = NULL;
         }
-      else if (IS_ENABLED(CONFIG_SMP_CLIENT)
-               && (req_hdr.nh_op == MGMT_OP_READ_RSP
-                   || req_hdr.nh_op == MGMT_OP_WRITE_RSP))
+#ifdef CONFIG_SMP_CLIENT
+      else if ((req_hdr.nh_op == MGMT_OP_READ_RSP
+                || req_hdr.nh_op == MGMT_OP_WRITE_RSP))
         {
           rc = smp_client_single_response(req, &req_hdr);
 
@@ -535,6 +531,7 @@ int smp_process_request_packet(FAR struct smp_streamer *streamer,
               valid_hdr = false;
             }
         }
+#endif
       else
         {
           rc = MGMT_ERR_ENOTSUP;
@@ -570,13 +567,13 @@ int smp_process_request_packet(FAR struct smp_streamer *streamer,
 
 bool smp_add_cmd_err(FAR zcbor_state_t *zse, uint16_t group, uint16_t ret)
 {
-  FAR struct cbor_nb_writer *container;
-  bool                       ok = true;
+  FAR struct cbor_nb_writer_s *container;
+  bool                         ok = true;
 
   if (ret != 0)
     {
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
-      container = CONTAINER_OF(zse, struct cbor_nb_writer, zs[0]);
+      container = container_of(zse, struct cbor_nb_writer_s, zs[0]);
 
       container->error_group = group;
       container->error_ret   = ret;

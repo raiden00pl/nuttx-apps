@@ -27,6 +27,7 @@
 
 #include <nuttx/list.h>
 
+#include <mgmt/mcumgr/mgmt_defines.h>
 #include <mgmt/mcumgr/smp.h>
 
 /****************************************************************************
@@ -49,6 +50,10 @@
 extern "C"
 {
 #endif
+
+/* Forward declaration */
+
+struct mgmt_group_s;
 
 /****************************************************************************
  * Name: mgmt_alloc_rsp_fn
@@ -100,7 +105,7 @@ CODE typedef void (*mgmt_reset_buf_fn)(FAR void *buf, FAR void *arg);
  *
  ****************************************************************************/
 
-CODE typedef int (*mgmt_handler_fn)(FAR struct smp_streamer *ctxt);
+CODE typedef int (*mgmt_handler_fn)(FAR struct smp_streamer_s *ctxt);
 
 /****************************************************************************
  * Name: mgmt_groups_cb_t
@@ -116,14 +121,14 @@ CODE typedef int (*mgmt_handler_fn)(FAR struct smp_streamer *ctxt);
  *
  ****************************************************************************/
 
-CODE typedef bool (*mgmt_groups_cb_t)(FAR const struct mgmt_group *group,
+CODE typedef bool (*mgmt_groups_cb_t)(FAR const struct mgmt_group_s *group,
                                       FAR void *user_data);
 
 /* Read handler and write handler for a single command ID.
  * Set use_custom_payload to true when using a user defined payload type
  */
 
-struct mgmt_handler
+struct mgmt_handler_s
 {
 	mgmt_handler_fn  mh_read;
 	mgmt_handler_fn  mh_write;
@@ -134,7 +139,7 @@ struct mgmt_handler
 
 /* A collection of handlers for an entire command group. */
 
-struct mgmt_group
+struct mgmt_group_s
 {
 	/* Entry list node. */
 
@@ -142,7 +147,7 @@ struct mgmt_group
 
 	/* Array of handlers; one entry per command ID. */
 
-	FAR const struct mgmt_handler *mg_handlers;
+	FAR const struct mgmt_handler_s *mg_handlers;
 	uint16_t mg_handlers_count;
 
 	/* The numeric ID of this group. */
@@ -185,7 +190,7 @@ struct mgmt_group
  *
  ****************************************************************************/
 
-void mgmt_register_group(FAR struct mgmt_group *group);
+void mgmt_register_group(FAR struct mgmt_group_s *group);
 
 /****************************************************************************
  * Name: mgmt_unregister_group
@@ -198,7 +203,7 @@ void mgmt_register_group(FAR struct mgmt_group *group);
  *
  ****************************************************************************/
 
-void mgmt_unregister_group(FAR struct mgmt_group *group);
+void mgmt_unregister_group(FAR struct mgmt_group_s *group);
 
 /****************************************************************************
  * Name: mgmt_groups_foreach
@@ -230,7 +235,7 @@ void mgmt_groups_foreach(mgmt_groups_cb_t user_cb, FAR void *user_data);
  *
  ****************************************************************************/
 
-FAR const struct mgmt_handler *
+FAR const struct mgmt_handler_s *
 mgmt_find_handler(uint16_t group_id, uint16_t command_id);
 
 /****************************************************************************
@@ -248,7 +253,7 @@ mgmt_find_handler(uint16_t group_id, uint16_t command_id);
  *
  ****************************************************************************/
 
-FAR const struct mgmt_group *mgmt_find_group(uint16_t group_id);
+FAR const struct mgmt_group_s *mgmt_find_group(uint16_t group_id);
 
 /****************************************************************************
  * Name: mgmt_get_handler
@@ -266,8 +271,8 @@ FAR const struct mgmt_group *mgmt_find_group(uint16_t group_id);
  *
  ****************************************************************************/
 
-FAR const struct mgmt_handler *
-mgmt_get_handler(FAR const struct mgmt_group *group, uint16_t command_id);
+FAR const struct mgmt_handler_s *
+mgmt_get_handler(FAR const struct mgmt_group_s *group, uint16_t command_id);
 
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 /****************************************************************************

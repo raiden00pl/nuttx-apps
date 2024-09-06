@@ -51,7 +51,7 @@ int smp_buf_init(size_t count, size_t size, size_t usize)
  *
  ****************************************************************************/
 
-void smp_buf_reset(FAR struct smp_buf *buf)
+void smp_buf_reset(FAR struct smp_buf_s *buf)
 {
 
 }
@@ -71,7 +71,7 @@ void smp_buf_reset(FAR struct smp_buf *buf)
  *
  ****************************************************************************/
 
-int smp_buf_tailroom(FAR struct smp_buf *nb)
+int smp_buf_tailroom(FAR struct smp_buf_s *nb)
 {
 
 }
@@ -93,7 +93,7 @@ int smp_buf_tailroom(FAR struct smp_buf *nb)
  *
  ****************************************************************************/
 
-FAR void *smp_buf_pull(FAR struct smp_buf *buf, size_t len)
+FAR void *smp_buf_pull(FAR struct smp_buf_s *buf, size_t len)
 {
 
 }
@@ -113,7 +113,7 @@ FAR void *smp_buf_pull(FAR struct smp_buf *buf, size_t len)
  *
  ****************************************************************************/
 
-FAR struct smp_buf *smp_buf_alloc(FAR struct smp_buf_pool *pool,
+FAR struct smp_buf_s *smp_buf_alloc(FAR struct smp_buf_pool *pool,
                                   unsigned int timeout)
 {
 
@@ -134,7 +134,7 @@ FAR struct smp_buf *smp_buf_alloc(FAR struct smp_buf_pool *pool,
  *
  ****************************************************************************/
 
-FAR struct smp_buf *smp_buf_get(FAR struct k_fifo *fifo,
+FAR struct smp_buf_s *smp_buf_get(FAR struct k_fifo *fifo,
                                 unsigned int timeout, FAR const char *func,
                                 int line)
 {
@@ -153,7 +153,7 @@ FAR struct smp_buf *smp_buf_get(FAR struct k_fifo *fifo,
  *
  ****************************************************************************/
 
-void smp_buf_unref(FAR struct smp_buf *buf)
+void smp_buf_unref(FAR struct smp_buf_s *buf)
 {
 
 }
@@ -172,7 +172,7 @@ void smp_buf_unref(FAR struct smp_buf *buf)
  *
  ****************************************************************************/
 
-FAR void *smp_buf_user_data(FAR const struct smp_buf *buf)
+FAR void *smp_buf_user_data(FAR const struct smp_buf_s *buf)
 {
 }
 
@@ -188,7 +188,7 @@ FAR void *smp_buf_user_data(FAR const struct smp_buf *buf)
  *
  ****************************************************************************/
 
-void smp_buf_put(FAR struct k_fifo *fifo, FAR struct smp_buf *buf)
+void smp_buf_put(FAR struct k_fifo *fifo, FAR struct smp_buf_s *buf)
 {
 
 }
@@ -211,7 +211,7 @@ void smp_buf_put(FAR struct k_fifo *fifo, FAR struct smp_buf *buf)
  *
  ****************************************************************************/
 
-FAR void *smp_buf_add_mem(FAR struct smp_buf *buf, FAR const void *mem,
+FAR void *smp_buf_add_mem(FAR struct smp_buf_s *buf, FAR const void *mem,
                           size_t len)
 {
 

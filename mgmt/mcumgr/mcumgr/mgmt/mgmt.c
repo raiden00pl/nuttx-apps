@@ -23,6 +23,7 @@
  ****************************************************************************/
 
 #include <string.h>
+#include <assert.h>
 
 #include <mgmt/mcumgr/mgmt.h>
 
@@ -48,7 +49,7 @@ static struct list_node g_mgmt_group_list =
  *
  ****************************************************************************/
 
-void mgmt_unregister_group(FAR struct mgmt_group *group)
+void mgmt_unregister_group(FAR struct mgmt_group_s *group)
 {
   /* Not supported */
 
@@ -62,11 +63,11 @@ void mgmt_unregister_group(FAR struct mgmt_group *group)
  *
  ****************************************************************************/
 
-FAR const struct mgmt_handler *mgmt_find_handler(uint16_t group_id,
-                                                 uint16_t command_id)
+FAR const struct mgmt_handler_s *
+mgmt_find_handler(uint16_t group_id, uint16_t command_id)
 {
-  FAR struct mgmt_group *group = NULL;
-  FAR struct mgmt_group *loop_group;
+  FAR struct mgmt_group_s *group = NULL;
+  FAR struct mgmt_group_s *loop_group;
 
   /* Find the group with the specified group id, if one exists
    * check the handler for the command id and make sure
@@ -75,7 +76,7 @@ FAR const struct mgmt_handler *mgmt_find_handler(uint16_t group_id,
    */
 
   list_for_every_entry(&g_mgmt_group_list, loop_group,
-                       struct mgmt_group, node)
+                       struct mgmt_group_s, node)
   {
     if (loop_group->mg_group_id == group_id)
       {
@@ -110,14 +111,14 @@ FAR const struct mgmt_handler *mgmt_find_handler(uint16_t group_id,
  *
  ****************************************************************************/
 
-const struct mgmt_group *mgmt_find_group(uint16_t group_id)
+const struct mgmt_group_s *mgmt_find_group(uint16_t group_id)
 {
-  struct mgmt_group *loop_group;
+  struct mgmt_group_s *loop_group;
 
 	/* Find the group with the specified group id */
 
   list_for_every_entry(&g_mgmt_group_list, loop_group,
-                       struct mgmt_group, node)
+                       struct mgmt_group_s, node)
     {
       if (loop_group->mg_group_id == group_id)
         {
@@ -135,8 +136,8 @@ const struct mgmt_group *mgmt_find_group(uint16_t group_id)
  *
  ****************************************************************************/
 
-const struct mgmt_handler *
-mgmt_get_handler(const struct mgmt_group *group, uint16_t command_id)
+const struct mgmt_handler_s *
+mgmt_get_handler(const struct mgmt_group_s *group, uint16_t command_id)
 {
 	if (command_id >= group->mg_handlers_count)
     {
@@ -163,13 +164,13 @@ mgmt_get_handler(const struct mgmt_group *group, uint16_t command_id)
 smp_translate_error_fn
 mgmt_find_error_translation_function(uint16_t group_id)
 {
-	FAR struct mgmt_group *group = NULL;
-  FAR struct mgmt_group *loop_group;
+	FAR struct mgmt_group_s *group = NULL;
+  FAR struct mgmt_group_s *loop_group;
 
 	/* Find the group with the specified group ID. */
 
-  list_for_every_entry(&mgmt_group_list, loop_group,
-                       struct mgmt_group, node)
+  list_for_every_entry(&g_mgmt_group_list, loop_group,
+                       struct mgmt_group_s, node)
     {
       if (loop_group->mg_group_id == group_id)
         {
@@ -194,7 +195,7 @@ mgmt_find_error_translation_function(uint16_t group_id)
  *
  ****************************************************************************/
 
-void mgmt_register_group(FAR struct mgmt_group *group)
+void mgmt_register_group(FAR struct mgmt_group_s *group)
 {
   list_add_tail(&g_mgmt_group_list, &group->node);
 }
