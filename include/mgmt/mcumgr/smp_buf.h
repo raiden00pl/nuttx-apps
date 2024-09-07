@@ -1,5 +1,5 @@
 /****************************************************************************
- * apps/mgmt/mcumgr/mcumgr/smp_buf.h
+ * apps/mgmt/mcumgr/smp_buf.h
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with

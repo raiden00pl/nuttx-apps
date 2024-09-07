@@ -1,5 +1,5 @@
 /****************************************************************************
- * apps/include/mgmt/mcumgr/mgmt.h
+ * apps/include/mgmt/mcumgr/mgmt_defines.h
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -54,21 +54,21 @@ extern "C"
 
 enum mcumgr_op_t
 {
-	/* Read op-code */
+  /* Read op-code */
 
-	MGMT_OP_READ = 0,
+  MGMT_OP_READ = 0,
 
-	/* Read response op-code */
+  /* Read response op-code */
 
-	MGMT_OP_READ_RSP,
+  MGMT_OP_READ_RSP,
 
-	/* Write op-code */
+  /* Write op-code */
 
-	MGMT_OP_WRITE,
+  MGMT_OP_WRITE,
 
-	/* Write response op-code */
+  /* Write response op-code */
 
-	MGMT_OP_WRITE_RSP,
+  MGMT_OP_WRITE_RSP,
 };
 
 /* MCUmgr groups (commands). The first 64 groups are reserved for
@@ -78,122 +78,123 @@ enum mcumgr_op_t
 
 enum mcumgr_group_t
 {
-	/* OS (operating system) group */
+  /* OS (operating system) group */
 
-	MGMT_GROUP_ID_OS	= 0,
+  MGMT_GROUP_ID_OS = 0,
 
-	/* Image management group, used for uploading firmware images */
+  /* Image management group, used for uploading firmware images */
 
-	MGMT_GROUP_ID_IMAGE,
+  MGMT_GROUP_ID_IMAGE,
 
-	/* Statistic management group, used for retrieving statistics */
+  /* Statistic management group, used for retrieving statistics */
 
-	MGMT_GROUP_ID_STAT,
+  MGMT_GROUP_ID_STAT,
 
-	/* Settings management (config) group, used for reading/writing settings */
+  /* Settings management (config) group, used for reading/writing settings */
 
-	MGMT_GROUP_ID_SETTINGS,
+  MGMT_GROUP_ID_SETTINGS,
 
-	/* Log management group (unused) */
+  /* Log management group (unused) */
 
-	MGMT_GROUP_ID_LOG,
+  MGMT_GROUP_ID_LOG,
 
-	/* Crash group (unused) */
+  /* Crash group (unused) */
 
-	MGMT_GROUP_ID_CRASH,
+  MGMT_GROUP_ID_CRASH,
 
-	/* Split image management group (unused) */
+  /* Split image management group (unused) */
 
-	MGMT_GROUP_ID_SPLIT,
+  MGMT_GROUP_ID_SPLIT,
 
-	/* Run group (unused) */
+  /* Run group (unused) */
 
-	MGMT_GROUP_ID_RUN,
+  MGMT_GROUP_ID_RUN,
 
-	/* FS (file system) group, used for performing file IO operations */
+  /* FS (file system) group, used for performing file IO operations */
 
-	MGMT_GROUP_ID_FS,
+  MGMT_GROUP_ID_FS,
 
-	/* Shell management group, used for executing shell commands */
+  /* Shell management group, used for executing shell commands */
 
-	MGMT_GROUP_ID_SHELL,
+  MGMT_GROUP_ID_SHELL,
 
-	/* Enumeration management group, used for listing supported command groups */
+  /* Enumeration management group, used for listing supported command groups
+   */
 
-	MGMT_GROUP_ID_ENUM,
+  MGMT_GROUP_ID_ENUM,
 
   /* Zephyr-specific: Basic group */
 
-	ZEPHYR_MGMT_GRP_BASIC	= 63,
+  ZEPHYR_MGMT_GRP_BASIC = 63,
 
-	/* User groups defined from 64 onwards */
+  /* User groups defined from 64 onwards */
 
-	MGMT_GROUP_ID_PERUSER	= 64,
+  MGMT_GROUP_ID_PERUSER = 64,
 };
 
 /* MCUmgr error codes */
 
 enum mcumgr_err_t
 {
-	/* No error (success). */
+  /* No error (success). */
 
-	MGMT_ERR_EOK		= 0,
+  MGMT_ERR_EOK = 0,
 
-	/* Unknown error. */
+  /* Unknown error. */
 
-	MGMT_ERR_EUNKNOWN,
+  MGMT_ERR_EUNKNOWN,
 
-	/* Insufficient memory (likely not enough space for CBOR object). */
+  /* Insufficient memory (likely not enough space for CBOR object). */
 
-	MGMT_ERR_ENOMEM,
+  MGMT_ERR_ENOMEM,
 
-	/* Error in input value. */
+  /* Error in input value. */
 
-	MGMT_ERR_EINVAL,
+  MGMT_ERR_EINVAL,
 
-	/* Operation timed out. */
+  /* Operation timed out. */
 
-	MGMT_ERR_ETIMEOUT,
+  MGMT_ERR_ETIMEOUT,
 
-	/* No such file/entry. */
+  /* No such file/entry. */
 
-	MGMT_ERR_ENOENT,
+  MGMT_ERR_ENOENT,
 
-	/* Current state disallows command. */
+  /* Current state disallows command. */
 
-	MGMT_ERR_EBADSTATE,
+  MGMT_ERR_EBADSTATE,
 
-	/* Response too large. */
+  /* Response too large. */
 
-	MGMT_ERR_EMSGSIZE,
+  MGMT_ERR_EMSGSIZE,
 
-	/* Command not supported. */
+  /* Command not supported. */
 
-	MGMT_ERR_ENOTSUP,
+  MGMT_ERR_ENOTSUP,
 
-	/* Corrupt */
+  /* Corrupt */
 
-	MGMT_ERR_ECORRUPT,
+  MGMT_ERR_ECORRUPT,
 
-	/* Command blocked by processing of other command */
+  /* Command blocked by processing of other command */
 
-	MGMT_ERR_EBUSY,
+  MGMT_ERR_EBUSY,
 
-	/* Access to specific function, command or resource denied */
+  /* Access to specific function, command or resource denied */
 
-	MGMT_ERR_EACCESSDENIED,
+  MGMT_ERR_EACCESSDENIED,
 
-	/* Requested SMP MCUmgr protocol version is not supported (too old) */
+  /* Requested SMP MCUmgr protocol version is not supported (too old) */
 
-	MGMT_ERR_UNSUPPORTED_TOO_OLD,
+  MGMT_ERR_UNSUPPORTED_TOO_OLD,
 
-	/* Requested SMP MCUmgr protocol version is not supported (too new) */
+  /* Requested SMP MCUmgr protocol version is not supported (too new) */
 
-	MGMT_ERR_UNSUPPORTED_TOO_NEW,
+  MGMT_ERR_UNSUPPORTED_TOO_NEW,
 
-	/* User errors defined from 256 onwards */
+  /* User errors defined from 256 onwards */
 
-	MGMT_ERR_EPERUSER	= 256
+  MGMT_ERR_EPERUSER = 256
 };
 
 #ifdef __cplusplus

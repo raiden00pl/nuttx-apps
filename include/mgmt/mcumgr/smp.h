@@ -103,8 +103,8 @@ typedef CODE uint16_t (*smp_transport_get_mtu_fn)(
  *
  ****************************************************************************/
 
-typedef CODE int (*smp_transport_ud_copy_fn)(FAR struct smp_buf_s *dst,
-                                             FAR const struct smp_buf_s *src);
+typedef CODE int (*smp_transport_ud_copy_fn)(
+  FAR struct smp_buf_s *dst, FAR const struct smp_buf_s *src);
 
 /****************************************************************************
  * Name: smp_transport_ud_free_fn
@@ -113,8 +113,9 @@ typedef CODE int (*smp_transport_ud_copy_fn)(FAR struct smp_buf_s *dst,
  *   SMP free user_data callback
  *
  *   This function frees smp_buf_s user data, because some transports store
- *   connection-specific information in the smp_buf_s user data (e.g., the BLE
- *   transport stores the connection reference that has to be decreased).
+ *   connection-specific information in the smp_buf_s user data (e.g.,
+ *   the BLE transport stores the connection reference that has to be
+ *   decreased).
  *
  * Input Parameters:
  *   ud - Contains a user_data pointer to be freed.
@@ -212,7 +213,7 @@ struct smp_streamer_s
   FAR struct cbor_nb_writer_s *writer;
 
 #ifdef CONFIG_MCUMGR_SMP_VERBOSE_ERR_RESPONSE
-  FAr const char *rc_rsn;
+  FAR const char *rc_rsn;
 #endif
 };
 
@@ -242,25 +243,25 @@ struct smp_hdr_s
 
 struct smp_transport_api_s
 {
-	/* Transport's send function. */
+  /* Transport's send function. */
 
-	smp_transport_out_fn output;
+  smp_transport_out_fn output;
 
-	/* Transport's get-MTU function. */
+  /* Transport's get-MTU function. */
 
-	smp_transport_get_mtu_fn get_mtu;
+  smp_transport_get_mtu_fn get_mtu;
 
-	/* Transport buffer user_data copy function. */
+  /* Transport buffer user_data copy function. */
 
-	smp_transport_ud_copy_fn ud_copy;
+  smp_transport_ud_copy_fn ud_copy;
 
-	/* Transport buffer user_data free function. */
+  /* Transport buffer user_data free function. */
 
-	smp_transport_ud_free_fn ud_free;
+  smp_transport_ud_free_fn ud_free;
 
-	/* Transport's check function for if a query is valid. */
+  /* Transport's check function for if a query is valid. */
 
-	smp_transport_query_valid_check_fn query_valid_check;
+  smp_transport_query_valid_check_fn query_valid_check;
 };
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_REASSEMBLY
@@ -269,8 +270,8 @@ struct smp_transport_api_s
 
 struct smp_transport_reassembly_s
 {
-  FAR struct smp_buf_s *current;    /* smp_buf_s used for reassembly */
-  uint16_t            expected;		/* expected bytes to come */
+  FAR struct smp_buf_s *current;  /* smp_buf_s used for reassembly */
+  uint16_t              expected; /* expected bytes to come */
 };
 #endif
 
@@ -278,9 +279,9 @@ struct smp_transport_reassembly_s
 
 struct smp_transport_s
 {
-	/* Function pointers */
+  /* Function pointers */
 
-	struct smp_transport_api_s functions;
+  struct smp_transport_api_s functions;
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_REASSEMBLY
   struct smp_transport_reassembly_s __reassembly;
@@ -295,13 +296,15 @@ struct smp_transport_s
  * Name: smp_process_request_packet
  *
  * Description:
- *   Processes a single SMP request packet and sends all corresponding responses.
+ *   Processes a single SMP request packet and sends all corresponding
+ *   responses.
  *
- *   Processes all SMP requests in an incoming packet.  Requests are processed
- *   sequentially from the start of the packet to the end.  Each response is sent
- *   individually in its own packet.  If a request elicits an error response,
- *   processing of the packet is aborted.  This function consumes the supplied
- *   request buffer regardless of the outcome.
+ *   Processes all SMP requests in an incoming packet.
+ *   Requests are processed sequentially from the start of the packet to
+ *   the end.  Each response is sent individually in its own packet.
+ *   If a request elicits an error response, processing of the packet is
+ *   aborted.  This function consumes the supplied request buffer regardless
+ *   of the outcome.
  *
  * Input Parameters:
  *  streamer - The streamer providing the required SMP callbacks.
@@ -320,9 +323,9 @@ int smp_process_request_packet(struct smp_streamer_s *streamer, void *req);
  * Description:
  *   Appends an "err" response
  *
- * This appends an err response to a pending outgoing response which contains a
- * result code for a specific group. Note that error codes are specific to the
- * command group they are emitted from).
+ *   This appends an err response to a pending outgoing response which
+ *   contains a result code for a specific group. Note that error codes are
+ *   specific to the command group they are emitted from).
  *
  * Input Parameters:
  *   zse   - The zcbor encoder to use.
@@ -340,13 +343,13 @@ bool smp_add_cmd_err(zcbor_state_t *zse, uint16_t group, uint16_t ret);
  * Name: smp_packet_alloc
  *
  * Description:
-*   Allocates a smp_buf_s for holding an mcumgr request or response.
-*
-* Return Value:
-*   A newly-allocated buffer smp_buf_s on success;
-*   NULL on failure.
-*
-****************************************************************************/
+ *   Allocates a smp_buf_s for holding an mcumgr request or response.
+ *
+ * Return Value:
+ *   A newly-allocated buffer smp_buf_s on success;
+ *   NULL on failure.
+ *
+ ****************************************************************************/
 
 struct smp_buf_s *smp_packet_alloc(void);
 

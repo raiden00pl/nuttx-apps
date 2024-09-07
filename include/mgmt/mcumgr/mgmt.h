@@ -130,10 +130,10 @@ CODE typedef bool (*mgmt_groups_cb_t)(FAR const struct mgmt_group_s *group,
 
 struct mgmt_handler_s
 {
-	mgmt_handler_fn  mh_read;
-	mgmt_handler_fn  mh_write;
+  mgmt_handler_fn  mh_read;
+  mgmt_handler_fn  mh_write;
 #ifdef CONFIG_MCUMGR_MGMT_HANDLER_USER_DATA
-	FAR void         *user_data;
+  FAR void         *user_data;
 #endif
 };
 
@@ -141,37 +141,37 @@ struct mgmt_handler_s
 
 struct mgmt_group_s
 {
-	/* Entry list node. */
+  /* Entry list node. */
 
   struct list_node node;
 
-	/* Array of handlers; one entry per command ID. */
+  /* Array of handlers; one entry per command ID. */
 
-	FAR const struct mgmt_handler_s *mg_handlers;
-	uint16_t mg_handlers_count;
+  FAR const struct mgmt_handler_s *mg_handlers;
+  uint16_t mg_handlers_count;
 
-	/* The numeric ID of this group. */
+  /* The numeric ID of this group. */
 
-	uint16_t mg_group_id;
+  uint16_t mg_group_id;
 
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
-	/* A function handler for translating version 2 SMP error codes to
+  /* A function handler for translating version 2 SMP error codes to
    * version 1 SMP error codes (optional)
-	 */
+   */
 
-	smp_translate_error_fn mg_translate_error;
+  smp_translate_error_fn mg_translate_error;
 #endif
 
 #ifdef CONFIG_MCUMGR_MGMT_CUSTOM_PAYLOAD
-	/* Should be true when using user defined payload */
+  /* Should be true when using user defined payload */
 
-	bool custom_payload;
+  bool custom_payload;
 #endif
 
 #ifdef CONFIG_MCUMGR_GRP_ENUM_DETAILS_NAME
-	/* NULL-terminated name of group */
+  /* NULL-terminated name of group */
 
-	FAR const char *mg_group_name;
+  FAR const char *mg_group_name;
 #endif
 };
 
@@ -231,7 +231,7 @@ void mgmt_groups_foreach(mgmt_groups_cb_t user_cb, FAR void *user_data);
  *
  * Return Value:
  *   The requested command handler on success;
- *	 NULL on failure.
+ *   NULL on failure.
  *
  ****************************************************************************/
 
@@ -249,7 +249,7 @@ mgmt_find_handler(uint16_t group_id, uint16_t command_id);
  *
  * Return Value:
  *   The requested group on success;
- *	 NULL on failure.
+ *   NULL on failure.
  *
  ****************************************************************************/
 
@@ -267,7 +267,7 @@ FAR const struct mgmt_group_s *mgmt_find_group(uint16_t group_id);
  *
  * Return Value:
  *   The requested command handler on success;
- *	 NULL on failure.
+ *   NULL on failure.
  *
  ****************************************************************************/
 
@@ -280,7 +280,7 @@ mgmt_get_handler(FAR const struct mgmt_group_s *group, uint16_t command_id);
  *
  * Description:
  *   Finds a registered error translation function for converting from SMP
- *	 version 2 error codes to legacy SMP version 1 error codes.
+ *   version 2 error codes to legacy SMP version 1 error codes.
  *
  * Input Parameters:
  *   group_id - The group of the translation function to find.
