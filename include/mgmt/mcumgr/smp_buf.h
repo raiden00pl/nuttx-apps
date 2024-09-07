@@ -47,34 +47,145 @@ extern "C"
 
 struct smp_buf_s
 {
-  uint8_t *data;
-  size_t len;
+  uint8_t *data;  /* Data buffer */
+  size_t   len;   /* Data length in buffer */
+  uint8_t *udata; /* User data buffer */
 };
 
 /****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
+/****************************************************************************
+ * Name: smp_buf_init
+ *
+ * Description:
+ *
+ * Input Parameters:
+ *   count -
+ *   size  -
+ *   usize -
+ *
+ * Return Value:
+ *
+ ****************************************************************************/
+
 int smp_buf_init(size_t count, size_t size, size_t usize);
+
+/****************************************************************************
+ * Name: smp_buf_reset
+ *
+ * Description:
+ *
+ * Input Parameters:
+ *   buf -
+ *
+ ****************************************************************************/
 
 void smp_buf_reset(FAR struct smp_buf_s *buf);
 
+/****************************************************************************
+ * Name: smp_buf_tailroom
+ *
+ * Description:
+ *
+ * Input Parameters:
+ *
+ * Return Value:
+ *
+ ****************************************************************************/
+
 int smp_buf_tailroom(FAR struct smp_buf_s *nb);
+
+/****************************************************************************
+ * Name: smp_buf_pull
+ *
+ * Description:
+ *
+ * Input Parameters:
+ *
+ * Return Value:
+ *
+ ****************************************************************************/
 
 FAR void *smp_buf_pull(FAR struct smp_buf_s *buf, size_t len);
 
+/****************************************************************************
+ * Name: smp_buf_alloc
+ *
+ * Description:
+ *
+ * Input Parameters:
+ *
+ * Return Value:
+ *
+ ****************************************************************************/
+
 FAR struct smp_buf_s *smp_buf_alloc(FAR struct smp_buf_pool *pool,
                                   unsigned int timeout);
+
+/****************************************************************************
+ * Name: smp_buf_get
+ *
+ * Description:
+ *
+ * Input Parameters:
+ *
+ * Return Value:
+ *
+ ****************************************************************************/
 
 FAR struct smp_buf_s *smp_buf_get(FAR struct k_fifo *fifo,
                                 unsigned int timeout, FAR const char *func,
                                 int line);
 
+/****************************************************************************
+ * Name: smp_buf_unref
+ *
+ * Description:
+ *
+ * Input Parameters:
+ *
+ *
+ ****************************************************************************/
+
 void smp_buf_unref(FAR struct smp_buf_s *buf);
+
+/****************************************************************************
+ * Name: smp_buf_user_data
+ *
+ * Description:
+ *
+ * Input Parameters:
+ *
+ * Return Value:
+ *
+ ****************************************************************************/
 
 FAR void *smp_buf_user_data(FAR const struct smp_buf_s *buf);
 
+/****************************************************************************
+ * Name: smp_buf_put
+ *
+ * Description:
+ *
+ * Input Parameters:
+ *
+ *
+ ****************************************************************************/
+
 void smp_buf_put(FAR struct k_fifo *fifo, FAR struct smp_buf_s *buf);
+
+/****************************************************************************
+ * Name: smp_buf_add_mem
+ *
+ * Description:
+ *
+ * Input Parameters:
+ *
+ * Return Value:
+ *
+ ****************************************************************************/
 
 FAR void *smp_buf_add_mem(FAR struct smp_buf_s *buf, FAR const void *mem,
                           size_t len);
