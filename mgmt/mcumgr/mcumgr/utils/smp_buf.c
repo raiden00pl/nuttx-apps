@@ -28,14 +28,78 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-int smp_buf_init(size_t count, size_t size, size_t usize)
-{
-
-}
 
 /****************************************************************************
  * Public Function
  ****************************************************************************/
+
+/****************************************************************************
+ * Name: smp_buf_init
+ *
+ * Description:
+ *
+ * Input Parameters:
+ *   count -
+ *   size  -
+ *   usize -
+ *
+ * Return Value:
+ *
+ ****************************************************************************/
+
+int smp_buf_init(size_t count, size_t size, size_t usize)
+{
+  struct smp_buf_s *bufs;
+  uint8_t *buf;
+  uint8_t *ubuf;
+  int i;
+
+  /* Allocate data */
+
+  bufs = zalloc(sizeof(struct smp_buf_s) * count);
+  if (!bufs)
+    {
+      _err("failed to allocate buffers\n");
+      return -ENOMEM;
+    }
+
+  buf = zalloc(count * size);
+  if (!buf)
+    {
+      _err("failed to allocate data buffer\n");
+      return -ENOMEM;
+    }
+
+  ubuf = zalloc(usize * size);
+  if (!ubuf)
+    {
+      _err("failed to allocate user buffer\n");
+      return -ENOMEM;
+    }
+
+  /* Initialzie buffers */
+
+  for (i = 0; i < count; i++)
+    {
+      /* Connect buffers */
+
+      bufs[i].__buf  = buf[i * size];
+      bufs[i].__ubuf = ubuf[i * usize];
+
+      /* Initialize buffer pointers */
+
+      bufs[i].data = __buf;
+      bufs[i].udata = __ubuf;
+
+      /* Initialize buffer data */
+
+      bufs[i].len = 0;
+      bufs[i].size = size;
+      bufs[i].usize = usize;
+    }
+
+  return OK;
+}
 
 /****************************************************************************
  * Name: smp_buf_reset
@@ -53,7 +117,8 @@ int smp_buf_init(size_t count, size_t size, size_t usize)
 
 void smp_buf_reset(FAR struct smp_buf_s *buf)
 {
-
+  buf->len  = 0U;
+	buf->data = buf->__buf;
 }
 
 /****************************************************************************
@@ -71,9 +136,9 @@ void smp_buf_reset(FAR struct smp_buf_s *buf)
  *
  ****************************************************************************/
 
-int smp_buf_tailroom(FAR struct smp_buf_s *nb)
+int smp_buf_tailroom(FAR struct smp_buf_s *buf)
 {
-
+  return buf->size - buf->len - (buf->data - buf->__buf);
 }
 
 /****************************************************************************
@@ -95,50 +160,10 @@ int smp_buf_tailroom(FAR struct smp_buf_s *nb)
 
 FAR void *smp_buf_pull(FAR struct smp_buf_s *buf, size_t len)
 {
+	DEBUGASSERT(buf->len < len);
 
-}
-
-/****************************************************************************
- * Name: smp_buf_alloc
- *
- * Description:
- *  Allocate a new buffer from a pool.
- *
- * Input Parameters:
- *   pool    - Which pool to allocate the buffer from.
- *   timeout - Timeout value in milliseconds.
- *
- * Return Value:
- *   New buffer or NULL if out of buffers.
- *
- ****************************************************************************/
-
-FAR struct smp_buf_s *smp_buf_alloc(FAR struct smp_buf_pool *pool,
-                                  unsigned int timeout)
-{
-
-}
-
-/****************************************************************************
- * Name: smp_buf_get
- *
- * Description:
- *   Get a buffer from a FIFO.
- *
- * Input Parameters:
- *   fifo    - Which FIFO to take the buffer from.
- *   timeout - Timeout value in milliseconds.
- *
- * Return Value:
- *   New buffer or NULL if the FIFO is empty.
- *
- ****************************************************************************/
-
-FAR struct smp_buf_s *smp_buf_get(FAR struct k_fifo *fifo,
-                                unsigned int timeout, FAR const char *func,
-                                int line)
-{
-
+	buf->len -= len;
+	return buf->data += len;
 }
 
 /****************************************************************************
@@ -174,23 +199,7 @@ void smp_buf_unref(FAR struct smp_buf_s *buf)
 
 FAR void *smp_buf_user_data(FAR const struct smp_buf_s *buf)
 {
-}
-
-/****************************************************************************
- * Name: smp_buf_put
- *
- * Description:
- *  Put a buffer to the end of a FIFO.
- *
- * Input Parameters:
- *   fifo - Which FIFO to put the buffer to.
- *   buf  - Buffer.
- *
- ****************************************************************************/
-
-void smp_buf_put(FAR struct k_fifo *fifo, FAR struct smp_buf_s *buf)
-{
-
+	return (void *)buf->user_data;
 }
 
 /****************************************************************************
@@ -214,5 +223,64 @@ void smp_buf_put(FAR struct k_fifo *fifo, FAR struct smp_buf_s *buf)
 FAR void *smp_buf_add_mem(FAR struct smp_buf_s *buf, FAR const void *mem,
                           size_t len)
 {
+  uint8_t *ptr = buf->data + buf->len;
+  buf->len += len;
+	return memcpy(ptr, mem, len);
+}
 
+/****************************************************************************
+ * Name: smp_buf_alloc
+ *
+ * Description:
+ *  Allocate a new buffer from a pool.
+ *
+ * Input Parameters:
+ *   pool    - Which pool to allocate the buffer from.
+ *   timeout - Timeout value in milliseconds.
+ *
+ * Return Value:
+ *   New buffer or NULL if out of buffers.
+ *
+ ****************************************************************************/
+
+FAR struct smp_buf_s *
+smp_buf_alloc(FAR struct smp_buf_pool *pool, unsigned int timeout)
+{
+}
+
+/****************************************************************************
+ * Name: smp_buf_get
+ *
+ * Description:
+ *   Get a buffer from a FIFO.
+ *
+ * Input Parameters:
+ *   fifo    - Which FIFO to take the buffer from.
+ *   timeout - Timeout value in milliseconds.
+ *
+ * Return Value:
+ *   New buffer or NULL if the FIFO is empty.
+ *
+ ****************************************************************************/
+
+FAR struct smp_buf_s *smp_buf_get(FAR struct k_fifo *fifo,
+                                  unsigned int timeout, FAR const char *func,
+                                  int line)
+{
+}
+
+/****************************************************************************
+ * Name: smp_buf_put
+ *
+ * Description:
+ *  Put a buffer to the end of a FIFO.
+ *
+ * Input Parameters:
+ *   fifo - Which FIFO to put the buffer to.
+ *   buf  - Buffer.
+ *
+ ****************************************************************************/
+
+void smp_buf_put(FAR struct k_fifo *fifo, FAR struct smp_buf_s *buf)
+{
 }
