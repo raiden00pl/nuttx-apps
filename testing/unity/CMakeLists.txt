@@ -33,14 +33,6 @@ if(CONFIG_TESTING_UNITY)
           ${CMAKE_CURRENT_LIST_DIR}/Unity
           BINARY_DIR
           ${CMAKE_BINARY_DIR}/apps/testing/unity/unity
-          CONFIGURE_COMMAND
-          ""
-          BUILD_COMMAND
-          ""
-          INSTALL_COMMAND
-          ""
-          TEST_COMMAND
-          ""
       DOWNLOAD_NO_PROGRESS true
       TIMEOUT 30)
 

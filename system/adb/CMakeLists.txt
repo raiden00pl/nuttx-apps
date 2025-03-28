@@ -39,14 +39,6 @@ if(CONFIG_SYSTEM_ADBD)
           ${CMAKE_CURRENT_LIST_DIR}/microADB
           BINARY_DIR
           ${CMAKE_BINARY_DIR}/apps/system/microADB/microADB
-          CONFIGURE_COMMAND
-          ""
-          BUILD_COMMAND
-          ""
-          INSTALL_COMMAND
-          ""
-          TEST_COMMAND
-          ""
       DOWNLOAD_NO_PROGRESS true
       TIMEOUT 30)
 
