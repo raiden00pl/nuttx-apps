@@ -163,6 +163,10 @@ typedef enum
 eMBErrorCode eMBInit(eMBMode eMode, uint8_t ucSlaveAddress,
                      uint8_t ucPort, speed_t ulBaudRate, eMBParity eParity);
 
+eMBErrorCode eMBInit2(eMBMode eMode, uint8_t ucSlaveAddress,
+                      const char *szDevice, speed_t ulBaudRate,
+                      eMBParity eParity);
+
 /* Initialize the Modbus protocol stack for Modbus TCP.
  *
  * This function initializes the Modbus TCP Module. Please note that

@@ -140,6 +140,54 @@ eMBErrorCode eMBRTUInit(uint8_t ucSlaveAddress, uint8_t ucPort,
   return eStatus;
 }
 
+eMBErrorCode eMBRTUInit2(uint8_t ucSlaveAddress, const char *szDevice,
+                         speed_t ulBaudRate, eMBParity eParity)
+{
+  eMBErrorCode eStatus = MB_ENOERR;
+  uint32_t usTimerT35_50us;
+
+  ENTER_CRITICAL_SECTION();
+
+  /* Modbus RTU uses 8 Databits. */
+
+  if (xMBPortSerialInit2(szDevice, ulBaudRate, 8, eParity) != true)
+    {
+      eStatus = MB_EPORTERR;
+    }
+  else
+    {
+      /* If baudrate > 19200 then we should use the fixed timer values
+       * t35 = 1750us. Otherwise t35 must be 3.5 times the character time.
+       */
+
+      if (ulBaudRate > 19200)
+        {
+          usTimerT35_50us = 35;       /* 1800us. */
+        }
+      else
+        {
+          /* The timer reload value for a character is given by:
+           *
+           * ChTimeValue = Ticks_per_1s / (Baudrate / 11)
+           *             = 11 * Ticks_per_1s / Baudrate
+           *             = 220000 / Baudrate
+           * The reload for t3.5 is 1.5 times this value and similarly
+           * for t3.5.
+           */
+
+          usTimerT35_50us = (7UL * 220000UL) / (2UL * ulBaudRate);
+        }
+
+      if (xMBPortTimersInit((uint16_t) usTimerT35_50us) != true)
+        {
+          eStatus = MB_EPORTERR;
+        }
+    }
+
+  EXIT_CRITICAL_SECTION();
+  return eStatus;
+}
+
 void eMBRTUStart(void)
 {
   ENTER_CRITICAL_SECTION();

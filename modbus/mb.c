@@ -204,6 +204,75 @@ eMBErrorCode eMBInit(eMBMode eMode, uint8_t ucSlaveAddress, uint8_t ucPort,
   return eStatus;
 }
 
+eMBErrorCode eMBInit2(eMBMode eMode, uint8_t ucSlaveAddress, const char *szDevice,
+                     speed_t ulBaudRate, eMBParity eParity)
+{
+  eMBErrorCode eStatus = MB_ENOERR;
+
+  /* check preconditions */
+
+  if ((ucSlaveAddress == MB_ADDRESS_BROADCAST) ||
+      (ucSlaveAddress < MB_ADDRESS_MIN) || (ucSlaveAddress > MB_ADDRESS_MAX))
+    {
+      eStatus = MB_EINVAL;
+    }
+  else
+    {
+      ucMBAddress = ucSlaveAddress;
+
+      switch (eMode)
+        {
+#ifdef CONFIG_MB_RTU_ENABLED
+        case MB_RTU:
+          pvMBFrameStartCur = eMBRTUStart;
+          pvMBFrameStopCur = eMBRTUStop;
+          peMBFrameSendCur = eMBRTUSend;
+          peMBFrameReceiveCur = eMBRTUReceive;
+          pvMBFrameCloseCur = vMBPortClose;
+          pxMBFrameCBByteReceived = xMBRTUReceiveFSM;
+          pxMBFrameCBTransmitterEmpty = xMBRTUTransmitFSM;
+          pxMBPortCBTimerExpired = xMBRTUTimerT35Expired;
+
+          eStatus = eMBRTUInit2(ucMBAddress, szDevice, ulBaudRate, eParity);
+          break;
+#endif
+#ifdef CONFIG_MB_ASCII_ENABLED
+        case MB_ASCII:
+          pvMBFrameStartCur = eMBASCIIStart;
+          pvMBFrameStopCur = eMBASCIIStop;
+          peMBFrameSendCur = eMBASCIISend;
+          peMBFrameReceiveCur = eMBASCIIReceive;
+          pvMBFrameCloseCur = vMBPortClose;
+          pxMBFrameCBByteReceived = xMBASCIIReceiveFSM;
+          pxMBFrameCBTransmitterEmpty = xMBASCIITransmitFSM;
+          pxMBPortCBTimerExpired = xMBASCIITimerT1SExpired;
+
+          eStatus = eMBASCIIInit2(ucMBAddress, szDevice, ulBaudRate, eParity);
+          break;
+#endif
+        default:
+          eStatus = MB_EINVAL;
+        }
+
+      if (eStatus == MB_ENOERR)
+        {
+          if (!xMBPortEventInit())
+            {
+              /* port dependent event module initialization failed. */
+
+              eStatus = MB_EPORTERR;
+            }
+          else
+            {
+              eMBCurrentMode = eMode;
+              eMBState = STATE_DISABLED;
+            }
+        }
+    }
+
+  return eStatus;
+}
+
 #ifdef CONFIG_MB_TCP_ENABLED
 eMBErrorCode eMBTCPInit(uint16_t ucTCPPort)
 {

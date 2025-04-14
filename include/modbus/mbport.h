@@ -134,6 +134,8 @@ void vMBMasterRunResRelease(void);
 
 bool xMBPortSerialInit(uint8_t ucPort, speed_t ulBaudRate,
                        uint8_t ucDataBits, eMBParity eParity);
+bool xMBPortSerialInit2(const char *szDevice, speed_t ulBaudRate,
+                        uint8_t ucDataBits, eMBParity eParity);
 void vMBPortClose(void);
 void xMBPortSerialClose(void);
 void vMBPortSerialEnable(bool xRxEnable, bool xTxEnable);
