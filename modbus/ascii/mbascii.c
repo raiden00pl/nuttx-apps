@@ -196,6 +196,27 @@ eMBErrorCode eMBASCIIInit(uint8_t ucSlaveAddress, uint8_t ucPort,
   return eStatus;
 }
 
+eMBErrorCode eMBASCIIInit2(uint8_t ucSlaveAddress, const char *szDevice,
+                           speed_t ulBaudRate, eMBParity eParity)
+{
+  eMBErrorCode eStatus = MB_ENOERR;
+
+  ENTER_CRITICAL_SECTION();
+  ucMBLFCharacter = MB_ASCII_DEFAULT_LF;
+
+  if (xMBPortSerialInit2(szDevice, ulBaudRate, 7, eParity) != true)
+    {
+      eStatus = MB_EPORTERR;
+    }
+  else if (xMBPortTimersInit(CONFIG_MB_ASCII_TIMEOUT_SEC * 20000UL) != true)
+    {
+      eStatus = MB_EPORTERR;
+    }
+
+  EXIT_CRITICAL_SECTION();
+  return eStatus;
+}
+
 void eMBASCIIStart(void)
 {
   ENTER_CRITICAL_SECTION();

@@ -43,6 +43,8 @@ extern "C"
 #ifdef CONFIG_MB_ASCII_ENABLED
 eMBErrorCode eMBASCIIInit(uint8_t slaveAddress, uint8_t ucPort,
                           speed_t ulBaudRate, eMBParity eParity);
+eMBErrorCode eMBASCIIInit2(uint8_t slaveAddress, const char *szDevice,
+                           speed_t ulBaudRate, eMBParity eParity);
 void eMBASCIIStart(void);
 void eMBASCIIStop(void);
 eMBErrorCode eMBASCIIReceive(uint8_t *pucRcvAddress, uint8_t **pucFrame,
