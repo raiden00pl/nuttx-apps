@@ -218,7 +218,7 @@ endmenu # "NimBLE memory configuration"
 
 config NIMBLE_PORTING_EXAMPLE
 	bool "Apache NimBLE NuttX porting example"
-	default y
+	default !EXAMPLES_NIMBLE
 
 if NIMBLE_PORTING_EXAMPLE
 
