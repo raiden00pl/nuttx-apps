@@ -1,0 +1,68 @@
+############################################################################
+# apps/netutils/s2opc/Make.defs
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.  The
+# ASF licenses this file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
+#
+############################################################################
+
+ifneq ($(CONFIG_NETUTILS_S2OPC),)
+CONFIGURED_APPS += $(APPDIR)/netutils/s2opc
+
+S2OPC_ROOT         = $(APPDIR)/netutils/s2opc/s2opc
+S2OPC_COMMON       = $(S2OPC_ROOT)/src/Common
+S2OPC_CLIENTSERVER = $(S2OPC_ROOT)/src/ClientServer
+S2OPC_PUBSUB       = $(S2OPC_ROOT)/src/PubSub
+S2OPC_CS_LOADERS   = $(S2OPC_CLIENTSERVER)/loaders
+S2OPC_AS_LOADERS   = $(S2OPC_CS_LOADERS)/address_space_loaders
+
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(APPDIR)/netutils/s2opc/port/nuttx
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_COMMON)/configuration
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_COMMON)/helpers
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_COMMON)/helpers_platform_dep
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_COMMON)/opcua_types
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_COMMON)/crypto
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_COMMON)/crypto/lib_itf
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_COMMON)/crypto/lib_dep
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_COMMON)/sks
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_CLIENTSERVER)/address_space
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_CLIENTSERVER)/api_toolkit
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_CLIENTSERVER)/configuration
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_CLIENTSERVER)/frontend/common_wrapper
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_CLIENTSERVER)/frontend/helper_wrapper
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_CLIENTSERVER)/frontend/client_wrapper
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_CLIENTSERVER)/frontend/server_wrapper
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_AS_LOADERS)/embedded
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_PUBSUB)/common
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_PUBSUB)/dataset
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_PUBSUB)/network
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_PUBSUB)/protocol
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_PUBSUB)/publisher
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_PUBSUB)/security
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_PUBSUB)/subscriber
+
+ifeq ($(CONFIG_S2OPC_XML_LOADERS),y)
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_AS_LOADERS)
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_AS_LOADERS)/xml_expat
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_CS_LOADERS)/config_loaders
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_CS_LOADERS)/config_loaders/xml_expat
+S2OPC_INCLUDES += ${INCDIR_PREFIX}$(S2OPC_PUBSUB)/config_loaders/xml_expat
+endif
+
+CFLAGS   += $(S2OPC_INCLUDES)
+CXXFLAGS += $(S2OPC_INCLUDES)
+endif
