@@ -1,0 +1,109 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+menuconfig NETUTILS_S2OPC
+	bool "S2OPC OPC UA toolkit"
+	default n
+	depends on CRYPTO_MBEDTLS
+	depends on LIBC_NETDB && PTHREAD_MUTEX_TYPES
+	depends on NET_TCP && NET_UDP
+	depends on NET_SOCKOPTS && NET_TCP_KEEPALIVE
+	depends on DEV_URANDOM
+	depends on RR_INTERVAL > 0
+	depends on NET_BINDTODEVICE
+	---help---
+		Enable the S2OPC OPC UA client/server and UDP PubSub toolkit.  The
+		selected S2OPC release is downloaded when the applications tree is
+		configured.  A cryptographically suitable random source is required
+		when secure OPC UA policies are used.  Certificate validation also
+		requires a correctly initialized system clock.  A round-robin
+		timeslice is required for normal S2OPC worker threads.
+
+if NETUTILS_S2OPC
+
+config S2OPC_VERSION
+	string "S2OPC version"
+	default "1.7.3"
+
+config S2OPC_THREAD_STACKSIZE
+	int "S2OPC worker thread stack size"
+	default 32768
+	range PTHREAD_STACK_MIN 1048576
+	---help---
+		Stack size assigned to worker threads created by S2OPC.  Secure OPC
+		UA processing needs considerably more stack than small NuttX tasks.
+
+config S2OPC_XML_LOADERS
+	bool "Enable XML configuration loaders"
+	default n
+	depends on ALLOW_MIT_COMPONENTS
+	depends on LIB_EXPAT
+	---help---
+		Enable the S2OPC client, server, user, address-space, and PubSub XML
+		loaders.  This adds the Expat XML parser dependency.  Leave this
+		disabled when configuration and address-space data are constructed
+		with the S2OPC C APIs or generated as C source.
+
+config S2OPC_NODE_MANAGEMENT
+	bool "Enable OPC UA Node Management services"
+	default n
+	---help---
+		Enable the AddNodes and DeleteNodes services.  The configured server
+		address space must be dynamically allocated for these services to
+		modify it.
+
+config S2OPC_NODE_ADD_OPTIONAL
+	bool "Add optional child nodes with Node Management"
+	default n
+	depends on S2OPC_NODE_MANAGEMENT
+	---help---
+		Add optional child nodes declared by a type when AddNodes creates an
+		object, variable, or method node.  Mandatory child nodes are added
+		regardless of this option.
+
+config S2OPC_HISTORY_READ
+	bool "Enable external HistoryRead Raw service"
+	default n
+	---help---
+		Enable S2OPC's HistoryRead Raw service.  The application must provide
+		the external history-read callback and its underlying history store.
+
+config S2OPC_EVENT_MANAGEMENT
+	bool "Enable OPC UA Events"
+	default n
+	---help---
+		Enable server event creation, triggering, and event monitored items.
+		The configured address space must contain the required event types.
+
+config S2OPC_AUDITING
+	bool "Enable OPC UA security auditing"
+	default n
+	depends on S2OPC_EVENT_MANAGEMENT
+	---help---
+		Enable S2OPC's auditing support.  S2OPC 1.7.3 limits auditing to
+		security audit event types and requires OPC UA Events.
+
+config S2OPC_MQTT
+	bool "Enable MQTT PubSub transport"
+	default n
+	depends on LIB_MQTT5
+	---help---
+		Enable the S2OPC MQTT PubSub transport using the Eclipse Paho MQTT
+		Async library packaged by NuttX.
+
+config S2OPC_ETHERNET
+	bool "Enable raw Ethernet PubSub transport"
+	default n
+	depends on NET_PKT
+	depends on NET_MCASTGROUP
+	depends on NET_PKTPROTO_OPTIONS
+	---help---
+		Enable UADP PubSub over raw Ethernet packet sockets.  Multicast
+		reception requires a network driver that implements multicast MAC
+		filtering.  The NuttX packet-socket implementation requires an
+		interface name and a destination multicast MAC address.  A combined
+		publisher/subscriber needs at least two packet-socket connections.
+
+endif # NETUTILS_S2OPC
