@@ -58,6 +58,17 @@ CFLAGS += -Wno-sign-compare -Wno-unused-const-variable -Wno-unused-function
 CFLAGS += -Wno-unused-variable -Wno-overflow -Wno-unused-but-set-variable
 CFLAGS += -Wno-strict-prototypes -Wno-maybe-uninitialized -nostdlib
 
+# Python threads use the default pthread stack, which is far too small for
+# the interpreter: give them the stack size of the python task, but not less
+# than PTHREAD_STACK_MIN (pthread_attr_setstacksize() would fail).
+
+THREAD_STACK_SIZE = $(shell \
+  if [ $(CONFIG_INTERPRETERS_CPYTHON_STACKSIZE) -gt $(CONFIG_PTHREAD_STACK_MIN) ]; \
+  then echo $(CONFIG_INTERPRETERS_CPYTHON_STACKSIZE); \
+  else echo $(CONFIG_PTHREAD_STACK_MIN); fi)
+
+CFLAGS += -DTHREAD_STACK_SIZE=$(THREAD_STACK_SIZE)
+
 DEPPATH += --dep-path $(CPYTHON_UNPACKNAME)$(DELIM)Programs
 VPATH   += :$(CPYTHON_UNPACKNAME)$(DELIM)Programs
 
