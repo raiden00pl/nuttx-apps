@@ -92,16 +92,22 @@ $(CPYTHON_UNPACKNAME): $(CPYTHON_ZIP)
 	$(Q) patch -p1 -d $(CPYTHON_UNPACKNAME) < patch$(DELIM)0020-ctypes-skip-pythonapi-on-nuttx.patch
 	$(Q) patch -p1 -d $(CPYTHON_UNPACKNAME) < patch$(DELIM)0021-posixmodule-ignore-utime-enosys-on-nuttx.patch
 
+# The host Python is built with the host compiler.  When CC, CXX, CPP,
+# AR or CFLAGS, CPPFLAGS, LDFLAGS are defined in the environment, make
+# exports the NuttX cross values to the recipe, so clear them here.
+
 $(HOSTPYTHON):
 	mkdir -p $(HOSTBUILD)
 	mkdir -p $(HOSTINSTALL)
 	$(Q) ( \
-			cd $(HOSTBUILD) && $(CPYTHON_PATH)/configure \
+			cd $(HOSTBUILD) && \
+			CC="$(HOSTCC)" CXX= CPP= AR= CFLAGS= CPPFLAGS= LDFLAGS= \
+			$(CPYTHON_PATH)/configure \
 			 --with-pydebug \
 			 --prefix=$(HOSTINSTALL) \
 			 --disable-test-modules \
 		 )
-	$(MAKE) -C $(HOSTBUILD) install
+	CFLAGS= CPPFLAGS= LDFLAGS= $(MAKE) -C $(HOSTBUILD) install
 
 # The `config.site` file contains settings that override the configuration
 # settings provided by the `configure` script. Depending on the features
