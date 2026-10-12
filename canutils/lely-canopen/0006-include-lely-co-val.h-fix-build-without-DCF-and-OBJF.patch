@@ -1,0 +1,32 @@
+From 99288ccf8be796017a24d39d605fa247ea162e37 Mon Sep 17 00:00:00 2001
+From: raiden00pl <raiden00@railab.me>
+Date: Mon, 12 Oct 2026 13:20:39 +0200
+Subject: [PATCH] include/lely/co/val.h: fix build without DCF and object file
+ support
+
+co_val_read_frbuf() and co_val_write_fwbuf() are declared if
+LELY_NO_STDIO is 0, but struct __frbuf and struct __fwbuf were
+forward-declared only if DCF or object file support is enabled.
+Without both, the structures are declared inside the parameter lists
+and the definitions in src/co/val.c conflict with the prototypes.
+
+Use the same condition for the forward declarations.
+
+Signed-off-by: raiden00pl <raiden00@railab.me>
+---
+ include/lely/co/val.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/lely/co/val.h b/include/lely/co/val.h
+index f68b093..b0b5dc8 100644
+--- a/include/lely/co/val.h
++++ b/include/lely/co/val.h
+@@ -28,7 +28,7 @@
+ #include <float.h>
+ #include <stddef.h>
+ 
+-#if !LELY_NO_CO_DCF || !LELY_NO_CO_OBJ_FILE
++#if !LELY_NO_STDIO
+ // The read file buffer from <lely/util/frbuf.h>
+ struct __frbuf;
+ // The write file buffer from <lely/util/fwbuf.h>

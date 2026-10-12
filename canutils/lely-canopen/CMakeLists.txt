@@ -46,7 +46,9 @@ if(CONFIG_CANUTILS_LELYCANOPEN)
         patch -p1 -d ${CMAKE_CURRENT_LIST_DIR}/lely-core <
         ${CMAKE_CURRENT_LIST_DIR}/0004-tools-coctl.c-add-missing-mutex-init.patch
         && patch -p1 -d ${CMAKE_CURRENT_LIST_DIR}/lely-core <
-        ${CMAKE_CURRENT_LIST_DIR}/0005-add-NuttX-support.patch
+        ${CMAKE_CURRENT_LIST_DIR}/0005-add-NuttX-support.patch && patch -p1 -d
+        ${CMAKE_CURRENT_LIST_DIR}/lely-core <
+        ${CMAKE_CURRENT_LIST_DIR}/0006-include-lely-co-val.h-fix-build-without-DCF-and-OBJF.patch
       DOWNLOAD_NO_PROGRESS true
       TIMEOUT 30)
 
