@@ -8,11 +8,16 @@ if CANUTILS_LELYCANOPEN
 
 config CANUTILS_LELYCANOPEN_URL
 	string "URL where Lely CANopen can be downloaded"
-	default "https://gitlab.com/lely_industries/lely-core/-/archive/master/"
+	default "https://gitlab.com/lely_industries/lely-core/-/archive"
+	---help---
+		Base URL of the source archives.  The archive is downloaded from
+		<URL>/<VERSION>/lely-core-<VERSION>.tar.gz.
 
 config CANUTILS_LELYCANOPEN_VERSION
 	string "Version number"
 	default "637de61625c9e8af2b9598109d6fb0e3a2829ce6"
+	---help---
+		Full commit SHA of Lely CANopen to download.
 
 menu "Lely CANopen configuration"
 

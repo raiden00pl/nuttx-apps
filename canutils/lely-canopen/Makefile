@@ -35,10 +35,9 @@ LELYCANOPEN_SRCNAME = lely-core
 UNPACK ?= tar -zxf
 LELYCANOPEN_SRCDIR = $(WD)/$(LELYCANOPEN_SRCNAME)
 
-# The GitLab "archive/master" tarball unpacks to a directory named
-# lely-core-master-<sha>, where <sha> is the current tip of master
+# The GitLab archive of <version> unpacks to lely-core-<version>
 
-LELYCANOPEN_UNPACKGLOB = lely-core-master-*
+LELYCANOPEN_UNPACKNAME = lely-core-$(LELYCANOPEN_VERSION)
 LELYCANOPEN_PATCHES = $(sort $(wildcard *.patch))
 
 # CAN network object
@@ -180,14 +179,14 @@ ifeq ($(wildcard $(LELYCANOPEN_SRCNAME)/.git),)
 
 $(LELYCANOPEN_TARBALL):
 	@echo "Downloading: $(LELYCANOPEN_TARBALL)"
-	$(Q) curl -fL -o $@.tmp $(CONFIG_CANUTILS_LELYCANOPEN_URL)/$(LELYCANOPEN_TARBALL)
+	$(Q) curl -fL -o $@.tmp $(CONFIG_CANUTILS_LELYCANOPEN_URL)/$(LELYCANOPEN_VERSION)/$(LELYCANOPEN_TARBALL)
 	$(Q) mv $@.tmp $@
 
 $(LELYCANOPEN_SRCNAME)/.patched: $(LELYCANOPEN_TARBALL) $(LELYCANOPEN_PATCHES)
 	@echo "Unpacking: $(LELYCANOPEN_TARBALL) -> $(LELYCANOPEN_SRCNAME)"
-	$(Q) rm -rf $(LELYCANOPEN_SRCNAME) $(LELYCANOPEN_UNPACKGLOB)
+	$(Q) rm -rf $(LELYCANOPEN_SRCNAME) $(LELYCANOPEN_UNPACKNAME)
 	$(Q) $(UNPACK) $(LELYCANOPEN_TARBALL)
-	$(Q) mv $(LELYCANOPEN_UNPACKGLOB) $(LELYCANOPEN_SRCNAME)
+	$(Q) mv $(LELYCANOPEN_UNPACKNAME) $(LELYCANOPEN_SRCNAME)
 	$(Q) for patch in $(LELYCANOPEN_PATCHES); do \
 	       echo "Patching: $$patch"; \
 	       patch -s -N -p1 -d $(LELYCANOPEN_SRCNAME) < $$patch || exit 1; \
@@ -197,7 +196,7 @@ $(LELYCANOPEN_SRCNAME)/.patched: $(LELYCANOPEN_TARBALL) $(LELYCANOPEN_PATCHES)
 context:: $(LELYCANOPEN_SRCNAME)/.patched
 
 distclean::
-	$(Q) rm -rf $(LELYCANOPEN_SRCNAME) $(LELYCANOPEN_UNPACKGLOB)
+	$(Q) rm -rf $(LELYCANOPEN_SRCNAME) $(LELYCANOPEN_UNPACKNAME)
 	$(call DELFILE, $(LELYCANOPEN_TARBALL))
 
 else
