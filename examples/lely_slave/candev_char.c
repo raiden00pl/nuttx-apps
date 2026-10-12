@@ -168,6 +168,19 @@ int coslave_candev_recv(FAR struct can_msg *msg)
           return 0;
         }
 
+#ifdef CONFIG_CAN_ERRORS
+      /* Skip error reports.  They are not CAN frames, ch_id holds the
+       * CAN_ERROR_* bits (e.g. CAN_ERROR_BUSERROR is 0x80, the SYNC
+       * COB-ID).  Lely's own CAN reader does not pass error frames to
+       * can_net_recv() either.
+       */
+
+      if (rxmsg.cm_hdr.ch_error)
+        {
+          continue;
+        }
+#endif
+
 #if defined(CONFIG_CAN_FD) && LELY_NO_CANFD
       /* Lely is built without CAN FD support, skip CAN FD frames */
 
