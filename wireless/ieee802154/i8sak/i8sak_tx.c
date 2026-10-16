@@ -114,7 +114,7 @@ void i8sak_tx_cmd(FAR struct i8sak_s *i8sak, int argc, FAR char *argv[])
 
   if (argc == argind + 1)
     {
-      i8sak->payload_len = i8sak_str2payload(argv[1], i8sak->payload);
+      i8sak->payload_len = i8sak_str2payload(argv[argind], i8sak->payload);
     }
 
   if (sendmax)
