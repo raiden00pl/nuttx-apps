@@ -281,7 +281,5 @@ static void tx_eventcb(FAR struct ieee802154_primitive_s *primitive,
              g_ieee802154_status_string[primitive->u.dataconf.status]);
     }
 
-  sem_post(&i8sak->sigsem);
-
   i8sak_releasedaemon(i8sak);
 }
