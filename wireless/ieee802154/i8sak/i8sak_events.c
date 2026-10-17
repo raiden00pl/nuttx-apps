@@ -408,6 +408,5 @@ int i8sak_eventlistener_removereceiver(FAR struct i8sak_s *i8sak,
     }
 
   sem_post(&i8sak->eventsem);
-  fprintf(stderr, "failed to remove receiver");
-  return ERROR;
+  return -ENOENT;
 }
