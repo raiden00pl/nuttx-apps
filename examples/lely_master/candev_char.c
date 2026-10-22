@@ -150,20 +150,34 @@ int comaster_candev_recv(FAR struct can_msg *msg)
   ssize_t          nread;
   int              i;
 
-  nread = read(g_candev_fd, &rxmsg, sizeof(struct can_msg_s));
-  if (nread < 0)
+  for (; ; )
     {
-      if (errno == EAGAIN || errno == EWOULDBLOCK)
+      nread = read(g_candev_fd, &rxmsg, sizeof(struct can_msg_s));
+      if (nread < 0)
+        {
+          if (errno == EAGAIN || errno == EWOULDBLOCK)
+            {
+              return 0;
+            }
+
+          return -1;
+        }
+
+      if (nread < CAN_MSGLEN(0))
         {
           return 0;
         }
 
-      return -1;
-    }
+#if defined(CONFIG_CAN_FD) && LELY_NO_CANFD
+      /* Lely is built without CAN FD support, skip CAN FD frames */
 
-  if (nread < CAN_MSGLEN(0))
-    {
-      return 0;
+      if (rxmsg.cm_hdr.ch_edl)
+        {
+          continue;
+        }
+#endif
+
+      break;
     }
 
   msg->id    = rxmsg.cm_hdr.ch_id;
@@ -181,9 +195,36 @@ int comaster_candev_recv(FAR struct can_msg *msg)
       msg->flags |= CAN_FLAG_RTR;
     }
 
-  msg->len = rxmsg.cm_hdr.ch_dlc;
+#if defined(CONFIG_CAN_FD) && !LELY_NO_CANFD
+  if (rxmsg.cm_hdr.ch_edl)
+    {
+      msg->flags |= CAN_FLAG_EDL;
 
-  for (i = 0; i < rxmsg.cm_hdr.ch_dlc; i++)
+      if (rxmsg.cm_hdr.ch_brs)
+        {
+          msg->flags |= CAN_FLAG_BRS;
+        }
+
+      if (rxmsg.cm_hdr.ch_esi)
+        {
+          msg->flags |= CAN_FLAG_ESI;
+        }
+
+      /* read() returned the header and the whole payload of the frame */
+
+      msg->len = nread - CAN_MSGLEN(0) > CANFD_MAX_LEN ?
+                 CANFD_MAX_LEN : nread - CAN_MSGLEN(0);
+    }
+  else
+#endif
+    {
+      /* DLC values 9 to 15 mean 8 data bytes in a classic CAN frame */
+
+      msg->len = rxmsg.cm_hdr.ch_dlc > CAN_MAX_LEN ?
+                 CAN_MAX_LEN : rxmsg.cm_hdr.ch_dlc;
+    }
+
+  for (i = 0; i < msg->len; i++)
     {
       msg->data[i] = rxmsg.cm_data[i];
     }
