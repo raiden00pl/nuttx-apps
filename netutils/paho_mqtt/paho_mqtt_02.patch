@@ -1,0 +1,267 @@
+From 9eb649f74bd808b182a807ae978085dc8cca3beb Mon Sep 17 00:00:00 2001
+From: raiden00pl <raiden00@railab.me>
+Date: Thu, 22 Oct 2026 18:19:03 +0200
+Subject: [PATCH] samples: Reset paho_c_pub/paho_c_sub state on every run.
+
+NuttX builtins share one image and .data/.bss are not re-initialised
+between runs, so options, MQTT v5 properties, flags and the trace
+callback of one run leaked into the next. Reset them at the start of
+main(). Failure exits destroy the client instead of calling exit(), so
+the background threads are stopped and the URL and properties freed.
+---
+ src/samples/paho_c_pub.c | 41 +++++++++++++++++++++++++++++++---------
+ src/samples/paho_c_sub.c | 32 +++++++++++++++++++++++++------
+ 2 files changed, 58 insertions(+), 15 deletions(-)
+
+diff --git a/src/samples/paho_c_pub.c b/src/samples/paho_c_pub.c
+index adffc8c..64bd3ef 100644
+--- a/src/samples/paho_c_pub.c
++++ b/src/samples/paho_c_pub.c
+@@ -39,7 +39,7 @@
+ 
+ volatile int toStop = 0;
+ 
+-struct pubsub_opts opts =
++static const struct pubsub_opts opts_default =
+ {
+ 	1, 0, 0, 0, "\n", 100,  	/* debug/app options */
+ 	NULL, NULL, 1, 0, 0, /* message options */
+@@ -50,6 +50,9 @@ struct pubsub_opts opts =
+ 	NULL, NULL, /* HTTP and HTTPS proxies */
+ };
+ 
++/* NuttX does not re-initialise .data between runs of a builtin */
++struct pubsub_opts opts;
++
+ MQTTAsync_responseOptions pub_opts = MQTTAsync_responseOptions_initializer;
+ MQTTProperty property;
+ MQTTProperties props = MQTTProperties_initializer;
+@@ -92,7 +95,7 @@ void onDisconnect(void* context, MQTTAsync_successData* response)
+ 
+ 
+ static int connected = 0;
+-void myconnect(MQTTAsync client);
++int myconnect(MQTTAsync client);
+ int mypublish(MQTTAsync client, int datalen, char* data);
+ 
+ void onConnectFailure5(void* context, MQTTAsync_failureData5* response)
+@@ -279,7 +282,7 @@ exit:
+ 	return rc;
+ }
+ 
+-void myconnect(MQTTAsync client)
++int myconnect(MQTTAsync client)
+ {
+ 	MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer;
+ 	MQTTAsync_SSLOptions ssl_opts = MQTTAsync_SSLOptions_initializer;
+@@ -346,8 +349,10 @@ void myconnect(MQTTAsync client)
+ 	if ((rc = MQTTAsync_connect(client, &conn_opts)) != MQTTASYNC_SUCCESS)
+ 	{
+ 		fprintf(stderr, "Failed to start connect, return code %s\n", MQTTAsync_strerror(rc));
+-		exit(EXIT_FAILURE);
++		return -1;
+ 	}
++
++	return 0;
+ }
+ 
+ 
+@@ -376,17 +381,27 @@ int main(int argc, char** argv)
+ {
+ 	MQTTAsync_disconnectOptions disc_opts = MQTTAsync_disconnectOptions_initializer;
+ 	MQTTAsync_createOptions create_opts = MQTTAsync_createOptions_initializer;
++	MQTTAsync_responseOptions pub_opts_default = MQTTAsync_responseOptions_initializer;
+ 	MQTTAsync client;
+ 	char* buffer = NULL;
+ 	char* url = NULL;
+ 	int url_allocated = 0;
+ 	int rc = 0;
++	int exitcode = EXIT_FAILURE;
+ 	const char* program_name = "paho_c_pub";
+ 	MQTTAsync_nameValue* infos = MQTTAsync_getVersionInfo();
+ #if !defined(_WIN32)
+     struct sigaction sa;
+ #endif
+ 
++	opts = opts_default;
++	pub_opts = pub_opts_default;
++	MQTTProperties_free(&props);
++	toStop = 0;
++	disconnected = 0;
++	connected = 0;
++	published = 0;
++
+ 	if (argc < 2)
+ 		usage(&opts, (pubsub_opts_nameValue*)infos, program_name);
+ 
+@@ -409,6 +424,8 @@ int main(int argc, char** argv)
+ 		MQTTAsync_setTraceCallback(trace_callback);
+ 		MQTTAsync_setTraceLevel(opts.tracelevel);
+ 	}
++	else
++		MQTTAsync_setTraceCallback(NULL);
+ 
+ 	create_opts.sendWhileDisconnected = 1;
+ 	if (opts.MQTTVersion >= MQTTVERSION_5)
+@@ -418,7 +435,7 @@ int main(int argc, char** argv)
+ 	{
+ 		if (!opts.quiet)
+ 			fprintf(stderr, "Failed to create client, return code: %s\n", MQTTAsync_strerror(rc));
+-		exit(EXIT_FAILURE);
++		goto free_url;
+ 	}
+ 
+ #if defined(_WIN32)
+@@ -438,7 +455,7 @@ int main(int argc, char** argv)
+ 	{
+ 		if (!opts.quiet)
+ 			fprintf(stderr, "Failed to set callbacks, return code: %s\n", MQTTAsync_strerror(rc));
+-		exit(EXIT_FAILURE);
++		goto destroy;
+ 	}
+ 
+ 	if (opts.MQTTVersion >= MQTTVERSION_5)
+@@ -469,7 +486,8 @@ int main(int argc, char** argv)
+ 		pub_opts.onFailure = onPublishFailure;
+ 	}
+ 
+-	myconnect(client);
++	if (myconnect(client) != 0)
++		goto destroy;
+ 
+ 	while (!toStop)
+ 	{
+@@ -508,19 +526,24 @@ int main(int argc, char** argv)
+ 	{
+ 		if (!opts.quiet)
+ 			fprintf(stderr, "Failed to start disconnect, return code: %s\n", MQTTAsync_strerror(rc));
+-		exit(EXIT_FAILURE);
++		goto destroy;
+ 	}
+ 
+ 	while (!disconnected)
+ 		mysleep(100);
+ 
++	exitcode = EXIT_SUCCESS;
++
++destroy:
+ 	toStop = 0;
+ 	MQTTAsync_destroy(&client);
++	MQTTProperties_free(&props);
+ 
++free_url:
+ 	if (url_allocated)
+ 		free(url);
+ 
+-	return EXIT_SUCCESS;
++	return exitcode;
+ }
+ 
+ 
+diff --git a/src/samples/paho_c_sub.c b/src/samples/paho_c_sub.c
+index 21c76fb..b7ec457 100644
+--- a/src/samples/paho_c_sub.c
++++ b/src/samples/paho_c_sub.c
+@@ -60,7 +60,7 @@ void cfinish(int sig)
+ }
+ 
+ 
+-struct pubsub_opts opts =
++static const struct pubsub_opts opts_default =
+ {
+ 	0, 0, 0, 0, "\n", 100,  	/* debug/app options */
+ 	NULL, NULL, 1, 0, 0, /* message options */
+@@ -71,6 +71,9 @@ struct pubsub_opts opts =
+ 	NULL, NULL, /* HTTP and HTTPS proxies */
+ };
+ 
++/* NuttX does not re-initialise .data between runs of a builtin */
++struct pubsub_opts opts;
++
+ 
+ int messageArrived(void *context, char *topicName, int topicLen, MQTTAsync_message *message)
+ {
+@@ -205,7 +208,9 @@ int main(int argc, char** argv)
+ 	MQTTAsync_createOptions create_opts = MQTTAsync_createOptions_initializer;
+ 	MQTTAsync_willOptions will_opts = MQTTAsync_willOptions_initializer;
+ 	MQTTAsync_SSLOptions ssl_opts = MQTTAsync_SSLOptions_initializer;
++	MQTTAsync_connectOptions conn_opts_default = MQTTAsync_connectOptions_initializer;
+ 	int rc = 0;
++	int exitcode = EXIT_FAILURE;
+ 	char* url = NULL;
+ 	const char* program_name = "paho_c_sub";
+ 	MQTTAsync_nameValue* infos = MQTTAsync_getVersionInfo();
+@@ -213,6 +218,12 @@ int main(int argc, char** argv)
+     struct sigaction sa;
+ #endif
+ 
++	opts = opts_default;
++	conn_opts = conn_opts_default;
++	finished = 0;
++	subscribed = 0;
++	disconnected = 0;
++
+ 	if (argc < 2)
+ 		usage(&opts, (pubsub_opts_nameValue*)infos, program_name);
+ 
+@@ -237,6 +248,8 @@ int main(int argc, char** argv)
+ 		MQTTAsync_setTraceCallback(trace_callback);
+ 		MQTTAsync_setTraceLevel(opts.tracelevel);
+ 	}
++	else
++		MQTTAsync_setTraceCallback(NULL);
+ 
+ 	if (opts.MQTTVersion >= MQTTVERSION_5)
+ 		create_opts.MQTTVersion = MQTTVERSION_5;
+@@ -246,7 +259,7 @@ int main(int argc, char** argv)
+ 	{
+ 		if (!opts.quiet)
+ 			fprintf(stderr, "Failed to create client, return code: %s\n", MQTTAsync_strerror(rc));
+-		exit(EXIT_FAILURE);
++		goto free_url;
+ 	}
+ 
+ 	rc = MQTTAsync_setCallbacks(client, client, NULL, messageArrived, NULL);
+@@ -254,7 +267,7 @@ int main(int argc, char** argv)
+ 	{
+ 		if (!opts.quiet)
+ 			fprintf(stderr, "Failed to set callbacks, return code: %s\n", MQTTAsync_strerror(rc));
+-		exit(EXIT_FAILURE);
++		goto exit;
+ 	}
+ 
+ #if defined(_WIN32)
+@@ -320,9 +333,11 @@ int main(int argc, char** argv)
+ 	{
+ 		if (!opts.quiet)
+ 			fprintf(stderr, "Failed to start connect, return code %s\n", MQTTAsync_strerror(rc));
+-		exit(EXIT_FAILURE);
++		goto exit;
+ 	}
+ 
++	exitcode = EXIT_SUCCESS;
++
+ 	while (!subscribed)
+ 		mysleep(100);
+ 
+@@ -337,7 +352,8 @@ int main(int argc, char** argv)
+ 	{
+ 		if (!opts.quiet)
+ 			fprintf(stderr, "Failed to start disconnect, return code: %s\n", MQTTAsync_strerror(rc));
+-		exit(EXIT_FAILURE);
++		exitcode = EXIT_FAILURE;
++		goto exit;
+ 	}
+ 
+ 	while (!disconnected)
+@@ -349,5 +365,9 @@ exit:
+ 	disconnected = 0;
+ 	MQTTAsync_destroy(&client);
+ 
+-	return EXIT_SUCCESS;
++free_url:
++	if (opts.connection == NULL)
++		free(url);
++
++	return exitcode;
+ }
