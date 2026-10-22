@@ -1,0 +1,97 @@
+From 2e195d16f519ae042cfa7c41b0e9d85efcf866fe Mon Sep 17 00:00:00 2001
+From: raiden00pl <raiden00@railab.me>
+Date: Thu, 22 Oct 2026 18:16:53 +0200
+Subject: [PATCH] src/co/dcf.c: fix build without object name support
+
+co_dev_set_vendor_name(), co_dev_set_product_name(),
+co_dev_set_order_code() and co_dev_set_name() are declared and defined
+only if LELY_NO_CO_OBJ_NAME is 0, but co_dev_parse_cfg() called them
+unconditionally.
+
+Call them only with object name support, like the other name setters
+in this file.
+
+Signed-off-by: raiden00pl <raiden00@railab.me>
+---
+ src/co/dcf.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/src/co/dcf.c b/src/co/dcf.c
+index ce771bb..eb59d39 100644
+--- a/src/co/dcf.c
++++ b/src/co/dcf.c
+@@ -205,6 +205,7 @@ co_dev_parse_cfg(co_dev_t *dev, const config_t *cfg)
+ 
+ 	const char *val;
+ 
++#if !LELY_NO_CO_OBJ_NAME
+ 	// clang-format off
+ 	if (co_dev_set_vendor_name(dev,
+ 			config_get(cfg, "DeviceInfo", "VendorName")) == -1) {
+@@ -212,11 +213,13 @@ co_dev_parse_cfg(co_dev_t *dev, const config_t *cfg)
+ 		diag(DIAG_ERROR, get_errc(), "unable to set vendor name");
+ 		goto error_parse_dev;
+ 	}
++#endif
+ 
+ 	val = config_get(cfg, "DeviceInfo", "VendorNumber");
+ 	if (val && *val)
+ 		co_dev_set_vendor_id(dev, strtoul(val, NULL, 0));
+ 
++#if !LELY_NO_CO_OBJ_NAME
+ 	// clang-format off
+ 	if (co_dev_set_product_name(dev,
+ 			config_get(cfg, "DeviceInfo", "ProductName")) == -1) {
+@@ -224,6 +227,7 @@ co_dev_parse_cfg(co_dev_t *dev, const config_t *cfg)
+ 		diag(DIAG_ERROR, get_errc(), "unable to set product name");
+ 		goto error_parse_dev;
+ 	}
++#endif
+ 
+ 	val = config_get(cfg, "DeviceInfo", "ProductNumber");
+ 	if (val && *val)
+@@ -233,6 +237,7 @@ co_dev_parse_cfg(co_dev_t *dev, const config_t *cfg)
+ 	if (val && *val)
+ 		co_dev_set_revision(dev, strtoul(val, NULL, 0));
+ 
++#if !LELY_NO_CO_OBJ_NAME
+ 	// clang-format off
+ 	if (co_dev_set_order_code(dev,
+ 			config_get(cfg, "DeviceInfo", "OrderCode")) == -1) {
+@@ -240,6 +245,7 @@ co_dev_parse_cfg(co_dev_t *dev, const config_t *cfg)
+ 		goto error_parse_dev;
+ 		// clang-format on
+ 	}
++#endif
+ 
+ 	unsigned int baud = 0;
+ 	val = config_get(cfg, "DeviceInfo", "BaudRate_10");
+@@ -406,6 +412,7 @@ co_dev_parse_cfg(co_dev_t *dev, const config_t *cfg)
+ 		goto error_parse_dcf;
+ 	}
+ 
++#if !LELY_NO_CO_OBJ_NAME
+ 	// clang-format off
+ 	if (co_dev_set_name(dev,
+ 			config_get(cfg, "DeviceComissioning", "NodeName"))
+@@ -414,6 +421,7 @@ co_dev_parse_cfg(co_dev_t *dev, const config_t *cfg)
+ 		diag(DIAG_ERROR, get_errc(), "unable to set node name");
+ 		goto error_parse_dcf;
+ 	}
++#endif
+ 
+ 	val = config_get(cfg, "DeviceComissioning", "Baudrate");
+ 	if (val && *val)
+@@ -437,7 +445,9 @@ error_parse_dcf:
+ error_parse_obj:
+ 	free(idx);
+ error_parse_idx:
++#if !LELY_NO_CO_OBJ_NAME
+ error_parse_dev:
++#endif
+ 	return -1;
+ }
+ 
+-- 
+2.55.0
+
