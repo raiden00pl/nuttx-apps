@@ -1,0 +1,133 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+menuconfig EXAMPLES_LVGLCAM
+	tristate "LVGL camera dashboard"
+	default n
+	depends on GRAPHICS_LVGL && VIDEO_STREAM && FB_OVERLAY_BLIT
+	select NETUTILS_NETLIB if NET
+	---help---
+		LVGL dashboard with the live view of a V4L2 camera and live system,
+		sensor and network data.  LVGL draws to the UI overlay.  The frames
+		are captured into three frame overlays and blitted into the view
+		overlay, a layer above the UI overlay that FBIOSET_DESTAREA places
+		over the view, so LVGL never draws over the frames.  SIGINT or
+		SIGTERM stops it.
+
+if EXAMPLES_LVGLCAM
+
+config EXAMPLES_LVGLCAM_PRIORITY
+	int "lvglcam task priority"
+	default 100
+	---help---
+		Priority of the LVGL task.  The camera and snapshot threads
+		inherit it.
+
+config EXAMPLES_LVGLCAM_STACKSIZE
+	int "lvglcam stack size"
+	default 16384
+	---help---
+		Stack size of the LVGL task.
+
+config EXAMPLES_LVGLCAM_INPUT_DEVPATH
+	string "Touchscreen device path"
+	default "/dev/input0"
+	depends on INPUT_TOUCHSCREEN
+	---help---
+		Touchscreen used as the LVGL pointer.
+
+config EXAMPLES_LVGLCAM_VIDEO_DEVPATH
+	string "Camera device path"
+	default "/dev/video"
+	---help---
+		V4L2 capture device registered by the board.
+
+config EXAMPLES_LVGLCAM_FB_DEVPATH
+	string "Framebuffer device path"
+	default "/dev/fb0"
+	---help---
+		Framebuffer with the UI, view and frame overlays.
+
+config EXAMPLES_LVGLCAM_UI_OVERLAY
+	int "UI overlay"
+	default 0
+	---help---
+		RGB565 framebuffer overlay covering the display that LVGL draws
+		to.
+
+config EXAMPLES_LVGLCAM_VIEW_OVERLAY
+	int "View overlay"
+	default 1
+	---help---
+		RGB565 framebuffer overlay shown above the UI overlay that shows
+		the frames.  It must support FBIOSET_DESTAREA.
+
+config EXAMPLES_LVGLCAM_FRAME_OVERLAY
+	int "First frame overlay"
+	default 2
+	---help---
+		First of the three framebuffer overlays the frames are captured
+		into.  Each must hold one frame without line padding and be a
+		FBIOSET_BLIT source.
+
+config EXAMPLES_LVGLCAM_WIDTH
+	int "Camera view width"
+	default 512
+	range 8 2048
+	---help---
+		Width of the RGB565 frames requested from the camera, a multiple
+		of 8.  The view and the data column must fit the display.
+
+config EXAMPLES_LVGLCAM_HEIGHT
+	int "Camera view height"
+	default 384
+	range 1 2048
+	---help---
+		Height of the RGB565 frames requested from the camera.
+
+config EXAMPLES_LVGLCAM_ACCEL_DEVPATH
+	string "Accelerometer uORB device path"
+	default "/dev/uorb/sensor_accel0"
+	depends on SENSORS
+	---help---
+		uORB accelerometer shown in the IMU card.
+
+config EXAMPLES_LVGLCAM_NETDEV
+	string "Network interface"
+	default "eth0"
+	depends on NET
+	---help---
+		Network interface shown in the network card.
+
+config EXAMPLES_LVGLCAM_TOF
+	bool "Depth card"
+	default y
+	---help---
+		Show the 8x8 distances of a V4L2 Z16 depth camera, such as the
+		VL53L5CX time-of-flight sensor.  Errors of the depth camera are
+		shown on the card and do not stop the dashboard.
+
+if EXAMPLES_LVGLCAM_TOF
+
+config EXAMPLES_LVGLCAM_TOF_DEVPATH
+	string "Depth camera device path"
+	default "/dev/video1"
+
+config EXAMPLES_LVGLCAM_TOF_FAR
+	int "Far end of the colour scale (mm)"
+	default 2000
+	range 100 4000
+
+endif # EXAMPLES_LVGLCAM_TOF
+
+config EXAMPLES_LVGLCAM_SNAPDIR
+	string "Snapshot directory"
+	default "/mnt"
+	---help---
+		Directory where the snapshot button saves BMP pictures, named
+		IMG_0001.BMP to IMG_9999.BMP.  Existing files are never
+		overwritten.
+
+endif # EXAMPLES_LVGLCAM
