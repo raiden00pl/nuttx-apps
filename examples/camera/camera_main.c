@@ -37,8 +37,6 @@
 #include <unistd.h>
 
 #include <nuttx/video/video.h>
-#include <nuttx/video/v4l2_cap.h>
-#include <nuttx/cache.h>
 
 #include "camera_fileutil.h"
 #include "camera_bkgd.h"
@@ -544,23 +542,14 @@ int main(int argc, FAR char *argv[])
 
   save_dir = futil_initialize();
 
-  /* Initialize video driver to create a device file */
-
-  ret = capture_initialize(CAMERA_DEV_PATH);
-  if (ret != 0)
-    {
-      printf("ERROR: Failed to initialize video: errno = %d\n", errno);
-      goto exit_without_cleaning_videodriver;
-    }
-
-  /* Open the device file. */
+  /* Open the device file registered by the board */
 
   v_fd = open(CAMERA_DEV_PATH, 0);
   if (v_fd < 0)
     {
       printf("ERROR: Failed to open video.errno = %d\n", errno);
       ret = ERROR;
-      goto exit_without_cleaning_buffer;
+      goto exit_without_cleaning_videodriver;
     }
 
   /* Set horizontal mirror if requested */
@@ -725,10 +714,9 @@ int main(int argc, FAR char *argv[])
               }
 
 #ifdef CONFIG_EXAMPLES_CAMERA_OUTPUT_LCD
-            /* If the sensor outputs RGB565X (big-endian), invalidate
-             * D-Cache so we read fresh DMA data from PSRAM, then
-             * byte-swap in place for display and swap back before
-             * returning the buffer to the driver.
+            /* If the sensor outputs RGB565X (big-endian), byte-swap in
+             * place for display and swap back before returning the
+             * buffer to the driver.
              */
 
             if (video_pixfmt == V4L2_PIX_FMT_RGB565X)
@@ -736,9 +724,6 @@ int main(int argc, FAR char *argv[])
                 FAR uint16_t *p = (FAR uint16_t *)v4l2_buf.m.userptr;
                 uint32_t npixels = v4l2_buf.bytesused / 2;
                 uint32_t i;
-
-                up_invalidate_dcache((uintptr_t)p,
-                                     (uintptr_t)p + v4l2_buf.bytesused);
 
                 for (i = 0; i < npixels; i++)
                   {
@@ -845,9 +830,6 @@ exit_this_app:
 
   free_buffer(buffers_video, VIDEO_BUFNUM);
   free_buffer(buffers_still, STILL_BUFNUM);
-
-exit_without_cleaning_buffer:
-  capture_uninitialize(CAMERA_DEV_PATH);
 
 exit_without_cleaning_videodriver:
 #ifdef CONFIG_EXAMPLES_CAMERA_OUTPUT_LCD

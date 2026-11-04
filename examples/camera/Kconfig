@@ -8,7 +8,8 @@ config EXAMPLES_CAMERA
 	default n
 	depends on DRIVERS_VIDEO
 	---help---
-		Enable the camera example
+		Enable the camera example.  The board must register the V4L2
+		capture device /dev/video.
 
 if EXAMPLES_CAMERA
 
